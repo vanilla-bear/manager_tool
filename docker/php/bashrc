@@ -1,0 +1,11 @@
+# .bashrc (à créer dans le répertoire du projet)
+
+# Alias utiles
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Afficher le chemin complet dans le terminal
+export PS1="\w \$ "
+
+# Ajouter d'autres configurations utiles

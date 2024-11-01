@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile  # Chemin vers le Dockerfile personnalisé
+    container_name: symfony_frankenphp
+    ports:
+      - "8443:443/tcp"
+      - "8443:443/udp"
+    volumes:
+      - .:/app  # Monte le projet entier
+      - ./web/public:/app/web/public  # Monte le répertoire public dans le conteneur
+      - ./docker/data/bash_history:/home/localuser/.bash_history  # Volume pour l'historique
+      - ./docker/php/bashrc:/home/localuser/.bashrc  # Monte le .bashrc dans le conteneur
+
+    environment:
+      - APP_ENV=dev
+      - DATABASE_URL=mysql://symfony:symfony@db:3306/symfony
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: symfony_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: symfony
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

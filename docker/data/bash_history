@@ -1,0 +1,16 @@
+ll
+ll
+symfony new --webapp web
+symfony new --webapp web
+ll web/
+rm -rf web/.git/
+ll web/
+symfony new --webapp web
+symfony new --webapp web --no-git
+rm -rf web/
+ll
+symfony new --webapp web --no-git
+ll
+ll web/
+ll
+cat /etc/os-release

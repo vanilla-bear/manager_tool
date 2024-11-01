@@ -1,0 +1,44 @@
+# General
+*.log
+*.cache
+*.tmp
+*.lock
+*.env
+.env.*
+/.vscode/
+/.idea/
+/node_modules/
+/web/vendor/
+/web/public/bundles/
+/web/public/build/
+/web/var/
+/web/tests/coverage/
+
+# Composer
+composer.phar
+
+# Symfony
+/web/var/
+/web/public/build/
+/web/public/bundles/
+/web/config/jwt/*
+/web/var/cache/*
+/web/var/logs/*
+/web/var/sessions/*
+
+# PHPStorm
+/.idea/
+/.phpunit.result.cache
+.phpunit.result.cache
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+/.docker/
+
+# Caddy
+Caddyfile
+
+# Git
+/.git/
+.DS_Store

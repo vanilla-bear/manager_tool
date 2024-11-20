@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bienvenue sur TeamFlow{% endblock %}
+
+{% block body %}
+        <!-- Hero Section -->
+        <div class="jumbotron bg-primary text-white text-center py-5 rounded">
+            <h1 class="display-4">Bienvenue sur TeamFlow</h1>
+            <p class="lead">La solution pour gérer vos équipes, suivre la vélocité, et planifier vos sprints en toute simplicité !</p>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features" class="mt-5">
+            <h2 class="text-center mb-4">Principales Fonctionnalités</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">Gestion des Membres</h3>
+                            <p class="card-text">Ajoutez, modifiez et gérez les membres de votre équipe en quelques clics.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">Périodes de Temps</h3>
+                            <p class="card-text">Créez et configurez des périodes de temps pour mieux organiser vos sprints.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">Intégration Google Calendar</h3>
+                            <p class="card-text">Synchronisez facilement vos événements avec Google Calendar pour une meilleure visibilité.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">Suivi de la Vélocité</h3>
+                            <p class="card-text">Suivez la vélocité de votre équipe et optimisez la productivité à chaque sprint.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}

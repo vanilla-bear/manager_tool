@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Time periods{% endblock %}
+
+{% block body %}
+        <h1 class="mb-4">Time periods</h1>
+
+        <!-- Formulaire pour ajouter une période de temps -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Add a Time Period</h2>
+                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addTimePeriodForm" aria-expanded="false" aria-controls="addTimePeriodForm">
+                    Toggle Form
+                </button>
+            </div>
+            <div id="addTimePeriodForm" class="collapse">
+                <div class="card-body">
+                    {{ form_start(form) }}
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                {{ form_label(form.name, 'Name', {'label_attr': {'class': 'form-label'}}) }}
+                                {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                {{ form_label(form.startDate, 'Start Date', {'label_attr': {'class': 'form-label'}}) }}
+                                {{ form_widget(form.startDate, {'attr': {'class': 'form-control', 'placeholder': 'dd/mm/yyyy'}}) }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                {{ form_label(form.endDate, 'End Date', {'label_attr': {'class': 'form-label'}}) }}
+                                {{ form_widget(form.endDate, {'attr': {'class': 'form-control', 'placeholder': 'dd/mm/yyyy'}}) }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                {{ form_label(form.type, 'Type', {'label_attr': {'class': 'form-label'}}) }}
+                                {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary">Add Time Period</button>
+                        </div>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire de filtrage -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="h5 mb-0">Filter Time Periods</h2>
+            </div>
+            <div class="card-body">
+                {{ form_start(filterForm, {'method': 'GET'}) }}
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        {{ form_row(filterForm.name) }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-group">
+                            {{ form_label(filterForm.type, 'Type', {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(filterForm.type, {'attr': {'class': 'form-select'}}) }}
+                        </div>
+                    </div>
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn btn-secondary">Apply Filter</button>
+                    </div>
+                </div>
+
+                {{ form_end(filterForm) }}
+            </div>
+        </div>
+
+        <!-- Liste des périodes de temps -->
+        <h2 class="h5 mb-3">List of Time periods</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered shadow-sm">
+                <thead class="table-primary">
+                <tr>
+                    <th>ID</th>
+                    <th>Actions</th>
+                    <th>Nom</th>
+                    <th>Début</th>
+                    <th>Fin</th>
+                    <th>Jours Ouvrés</th>
+                    <th>Type</th>
+                    <th>Vél. Estimée</th>
+                    <th>Vél. communiquée</th>
+                    <th>Vél. Final</th>
+                    <th>Ajout (Pts)</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for timePeriod in timePeriods %}
+                    <tr>
+                        <td>{{ timePeriod.id }}</td>
+                        <td>
+                            <a href="{{ path('app_time_period_edit', { 'id': timePeriod.id }) }}" class="btn btn-sm btn-warning mb-1">Edit</a>
+                            <a href="{{ path('app_time_period_view', { 'id': timePeriod.id }) }}" class="btn btn-sm btn-info text-white mb-1">Voir</a>
+                            <form action="{{ path('app_time_period_delete', { 'id': timePeriod.id }) }}" method="post" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ timePeriod.id) }}">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this item?');">Delete</button>
+                            </form>
+                        </td>
+                        <td>{{ timePeriod.name }}</td>
+                        <td>{{ timePeriod.startDate|date('Y-m-d') }}</td>
+                        <td>{{ timePeriod.endDate|date('Y-m-d') }}</td>
+                        <td>{{ timePeriod.workingDays }}</td>
+                        <td>{{ timePeriod.type.value }}</td>
+                        <td>{{ timePeriod.estimatedVelocity|round(0, 'floor') }}</td>
+                        <td>{{ timePeriod.communicatedVelocity }}</td>
+                        <td>{{ timePeriod.finalVelocity }}</td>
+                        <td>{{ timePeriod.pointsAdded }}</td>
+
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center">No time periods found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+{% endblock %}

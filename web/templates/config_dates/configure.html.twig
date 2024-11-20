@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Configurer les Dates{% endblock %}
+
+{% block body %}
+    <h1>Configurer les Dates de début et de fin</h1>
+
+    {{ form_start(form) }}
+    {{ form_row(form.date_debut) }}
+    {{ form_row(form.date_fin) }}
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    {{ form_end(form) }}
+
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+{% endblock %}

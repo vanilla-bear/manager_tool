@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Google Calendar Events{% endblock %}
+
+{% block body %}
+        <h1 class="mb-4">Google Calendar Events</h1>
+
+        <!-- Boutons d'action -->
+        <div class="mb-4">
+            <form action="{{ path('app_google_calendar_fetch') }}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-primary">Fetch Events</button>
+            </form>
+            <form action="{{ path('app_google_calendar_delete_all') }}" method="post" class="d-inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_all_events') }}">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all events?');">Delete All Events</button>
+            </form>
+        </div>
+
+        <!-- Formulaire de configuration des dates -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="h5 mb-0">Configurer les dates</h2>
+            </div>
+            <div class="card-body">
+                {{ form_start(form) }}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(form.date_debut, 'Date de début', {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(form.date_debut, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(form.date_fin, 'Date de fin', {'label_attr': {'class': 'form-label'}}) }}
+                            {{ form_widget(form.date_fin, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-secondary">Enregistrer</button>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+        <!-- Tableau des événements -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered shadow-sm">
+                <thead class="table-primary">
+                <tr>
+                    <th>Event ID</th>
+                    <th>Title</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td>{{ event.eventId }}</td>
+                        <td>{{ event.title }}</td>
+                        <td>{{ event.startTime|date('Y-m-d H:i') }}</td>
+                        <td>{{ event.endTime|date('Y-m-d H:i') }}</td>
+                        <td>{{ event.description }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No events found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+{% endblock %}

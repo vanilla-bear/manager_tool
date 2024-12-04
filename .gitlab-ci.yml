@@ -1,0 +1,141 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  PHP_IMAGE: "php:8.1-cli"           # Image Docker pour PHP
+
+cache:
+  paths:
+    - vendor/                        # Cache Composer
+    - node_modules/                  # Cache Yarn
+  key: "$CI_COMMIT_REF_SLUG"
+
+build:
+  stage: build
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+    - curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+    - apt-get install -y nodejs
+    - npm install -g yarn
+  script:
+    - yarn install
+    - yarn encore production
+  artifacts:
+    paths:
+      - vendor/
+      - public/build/
+    expire_in: 1 week
+  only:
+    - main
+
+behat:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./vendor/bin/behat
+  dependencies:
+    - build
+  only:
+    - main
+
+phpunit:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./vendor/bin/phpunit
+  dependencies:
+    - build
+  only:
+    - main
+
+phpstan:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./vendor/bin/phpstan analyse src/
+  dependencies:
+    - build
+  only:
+    - main
+
+lint-yaml:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./bin/console lint:yaml config/
+  dependencies:
+    - build
+  only:
+    - main
+
+lint-twig:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./bin/console lint:twig templates/
+  dependencies:
+    - build
+  only:
+    - main
+
+php-cs-fixer:
+  stage: test
+  image: $PHP_IMAGE
+  before_script:
+    - apt-get update && apt-get install -y unzip git libzip-dev zlib1g-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install
+  script:
+    - ./vendor/bin/php-cs-fixer fix --dry-run
+  dependencies:
+    - build
+  only:
+    - main
+
+#deploy:
+#  stage: deploy
+#  image: alpine:latest
+#  before_script:
+#    - apk add --no-cache openssh
+#    - mkdir -p ~/.ssh
+#    - echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+#    - chmod 600 ~/.ssh/id_rsa
+#  script:
+#    - scp -r vendor/ public/build/ .env.prod user@server:/path/to/app
+#    - ssh user@server "cd /path/to/app && php bin/console cache:clear --env=prod"
+#  dependencies:
+#    - build
+#  only:
+#    - main

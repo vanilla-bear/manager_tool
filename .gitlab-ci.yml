@@ -33,6 +33,9 @@ build:
     expire_in: 1 week
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 behat:
   stage: test
@@ -48,6 +51,9 @@ behat:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 phpunit:
   stage: test
@@ -63,6 +69,9 @@ phpunit:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 phpstan:
   stage: test
@@ -78,6 +87,9 @@ phpstan:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 lint-yaml:
   stage: test
@@ -93,6 +105,9 @@ lint-yaml:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 lint-twig:
   stage: test
@@ -108,6 +123,9 @@ lint-twig:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 php-cs-fixer:
   stage: test
@@ -123,6 +141,9 @@ php-cs-fixer:
     - build
   only:
     - main
+  tags:
+    - docker
+    - linux
 
 #deploy:
 #  stage: deploy

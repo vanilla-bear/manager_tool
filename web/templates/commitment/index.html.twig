@@ -1,0 +1,155 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Respect des Délais{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .completion-rate {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .target-line {
+            border-top: 2px dashed #dc3545;
+            position: relative;
+        }
+        .target-line::after {
+            content: 'Objectif 90%';
+            position: absolute;
+            right: 0;
+            top: -25px;
+            color: #dc3545;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Respect des Délais</h1>
+            <a href="{{ path('app_sprint_sync') }}" class="btn btn-primary">
+                <i class="fas fa-sync"></i> Sync Sprints
+            </a>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Taux de Complétion Moyen (3 derniers sprints)</h5>
+                        <p class="completion-rate {% if averageCompletionRate >= 90 %}text-success{% else %}text-danger{% endif %}">
+                            {{ averageCompletionRate|number_format(1) }}%
+                        </p>
+                        <small class="text-muted">Objectif > 90%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Historique des Sprints</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Sprint</th>
+                            <th>Points Engagés</th>
+                            <th>Points Ajoutés</th>
+                            <th>Points Terminés</th>
+                            <th>Taux Initial</th>
+                            <th>Taux Ajusté</th>
+                            <th>Impact Ajouts</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sprint in sprints %}
+                            {% set completionRate = sprint.completionRate %}
+                            {% set adjustedRate = sprint.adjustedCompletionRate %}
+                            {% set addedPercentage = sprint.addedPointsPercentage %}
+                            <tr>
+                                <td>{{ sprint.name }}</td>
+                                <td>{{ sprint.committedPoints }}</td>
+                                <td>
+                                    {% if sprint.addedPointsDuringSprint > 0 %}
+                                        <span class="text-warning">
+                                            +{{ sprint.addedPointsDuringSprint }}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ sprint.completedPoints }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if completionRate is not null %}
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar {% if completionRate >= 90 %}bg-success{% else %}bg-danger{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ min(completionRate, 100) }}%"
+                                                     aria-valuenow="{{ completionRate }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span class="text-nowrap">{{ completionRate|number_format(1) }}%</span>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if adjustedRate is not null %}
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar {% if adjustedRate >= 90 %}bg-success{% else %}bg-danger{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ min(adjustedRate, 100) }}%"
+                                                     aria-valuenow="{{ adjustedRate }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span class="text-nowrap">{{ adjustedRate|number_format(1) }}%</span>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if addedPercentage > 0 %}
+                                        <span class="text-warning">+{{ addedPercentage|number_format(1) }}%</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if completionRate >= 90 %}
+                                        <span class="badge bg-success">Objectif Atteint</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Sous l'Objectif</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

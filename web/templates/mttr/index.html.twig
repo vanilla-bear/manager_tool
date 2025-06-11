@@ -1,0 +1,213 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}MTTR Statistics{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>MTTR Statistics</h1>
+            <div>
+                <a href="{{ path('app_mttr_sync') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-sync me-2"></i>Sync Statistics
+                </a>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        Page Size: {{ app.request.query.get('limit', 10) }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index', {limit: 10}) }}">10</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index', {limit: 25}) }}">25</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index', {limit: 50}) }}">50</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index', {limit: 100}) }}">100</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Time from Creation to Resolution</h5>
+                        <p class="card-text">
+                            {% if stats.avgCreatedToTermine is not null %}
+                                <strong>{{ (stats.avgCreatedToTermine / 86400)|number_format(1) }}</strong> days
+                                <br>
+                                <small class="text-muted">Based on {{ stats.totalResolved }} resolved bugs</small>
+                                <hr>
+                                <small class="d-block">
+                                    <strong>Min:</strong> {{ (stats.minCreatedToTermine / 86400)|number_format(1) }} days<br>
+                                    <strong>Max:</strong> {{ (stats.maxCreatedToTermine / 86400)|number_format(1) }} days
+                                </small>
+                            {% else %}
+                                No data available
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Time from "À faire" to Resolution</h5>
+                        <p class="card-text">
+                            {% if stats.avgAFaireToTermine is not null %}
+                                <strong>{{ (stats.avgAFaireToTermine / 86400)|number_format(1) }}</strong> days
+                                <br>
+                                <small class="text-muted">Time in backlog: {{ ((stats.avgCreatedToTermine - stats.avgAFaireToTermine) / 86400)|number_format(1) }} days</small>
+                            {% else %}
+                                No data available
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Development Time</h5>
+                        <p class="card-text">
+                            {% if stats.avgAFaireToDevsTermines is not null %}
+                                <strong>{{ (stats.avgAFaireToDevsTermines / 86400)|number_format(1) }}</strong> days
+                                <br>
+                                <small class="text-muted">Time in review: {{ ((stats.avgAFaireToTermine - stats.avgAFaireToDevsTermines) / 86400)|number_format(1) }} days</small>
+                            {% else %}
+                                No data available
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if stats.details is not empty %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Top 5 Longest Resolution Times</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Bug</th>
+                                <th>Summary</th>
+                                <th>Resolution Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in stats.details %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ jira_host }}/browse/{{ detail.bugKey }}" 
+                                           target="_blank"
+                                           class="text-decoration-none">
+                                            {{ detail.bugKey }}
+                                            <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                        </a>
+                                    </td>
+                                    <td>{{ detail.summary }}</td>
+                                    <td>{{ detail.createdToTermine|number_format(1) }} days</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Bugs</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Bug Key</th>
+                            <th>Summary</th>
+                            <th>Created</th>
+                            <th>Time to Resolution</th>
+                            <th>Development Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bug in bugs %}
+                            <tr>
+                                <td>
+                                    <a href="{{ jira_host }}/browse/{{ bug.bugKey }}" 
+                                       target="_blank"
+                                       class="text-decoration-none">
+                                        {{ bug.bugKey }}
+                                        <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                    </a>
+                                </td>
+                                <td>{{ bug.summary }}</td>
+                                <td>{{ bug.createdAt|date('Y-m-d H:i') }}</td>
+                                <td>
+                                    {% if bug.createdToTermineTime is not null %}
+                                        {{ (bug.createdToTermineTime / 86400)|number_format(1) }} days
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if bug.aFaireToDevsTerminesTime is not null %}
+                                        {{ (bug.aFaireToDevsTerminesTime / 86400)|number_format(1) }} days
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if bug.currentStatus == 'Terminé' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ bug.currentStatus }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {# Pagination #}
+            {% if totalPages > 1 %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                                <a class="page-link" href="{{ path('app_mttr_index', {page: page - 1, limit: limit}) }}">Previous</a>
+                            </li>
+                            
+                            {% for i in 1..totalPages %}
+                                <li class="page-item {{ page == i ? 'active' : '' }}">
+                                    <a class="page-link" href="{{ path('app_mttr_index', {page: i, limit: limit}) }}">{{ i }}</a>
+                                </li>
+                            {% endfor %}
+                            
+                            <li class="page-item {{ page >= totalPages ? 'disabled' : '' }}">
+                                <a class="page-link" href="{{ path('app_mttr_index', {page: page + 1, limit: limit}) }}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %} 

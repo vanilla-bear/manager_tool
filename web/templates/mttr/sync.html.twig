@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Synchronize MTTR Statistics{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h1 class="h3 mb-0">Synchronize MTTR Statistics</h1>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="start_date" 
+                                           name="start_date" 
+                                           value="{{ '-3 months'|date('Y-m-d') }}"
+                                           required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="end_date" 
+                                           name="end_date" 
+                                           value="{{ 'now'|date('Y-m-d') }}"
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sync me-2"></i>Start Synchronization
+                                </button>
+                                <a href="{{ path('app_mttr_index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Statistics
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %} 

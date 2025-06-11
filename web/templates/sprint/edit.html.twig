@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Sprint{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('app_sprint_index') }}">Sprints</a></li>
+                <li class="breadcrumb-item active">Edit Sprint</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">Edit Sprint: {{ sprint.name }}</h1>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="planned_capacity" class="form-label">Planned Capacity (days)</label>
+                        <input type="number" 
+                               step="0.5" 
+                               class="form-control" 
+                               id="planned_capacity" 
+                               name="planned_capacity" 
+                               value="{{ sprint.plannedCapacityDays }}"
+                               required>
+                        <div class="form-text">
+                            Current actual capacity: {{ sprint.capacityDays|number_format(1) }} days
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Sprint Period</label>
+                        <p class="form-control-static">
+                            {{ sprint.startDate|date('Y-m-d') }} to {{ sprint.endDate|date('Y-m-d') }}
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Points</label>
+                        <p class="form-control-static">
+                            Completed: {{ sprint.completedPoints }} / 
+                            Committed: {{ sprint.committedPoints }}
+                            ({{ sprint.completionRate|number_format(1) }}%)
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Current Velocity</label>
+                        <p class="form-control-static">
+                            {{ sprint.velocityPerDay|number_format(1) }} points/day
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ path('app_sprint_index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to list
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %} 

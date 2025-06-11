@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Synchronize Bug Statistics{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('app_bugs_index') }}">Bug Statistics</a></li>
+                <li class="breadcrumb-item active">Synchronize</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">Synchronize Bug Statistics with Jira</h1>
+            </div>
+            <div class="card-body">
+                <form method="post" id="syncForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="start_date" 
+                                       name="start_date" 
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="end_date" 
+                                       name="end_date" 
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        This will synchronize bug statistics for each month in the selected date range.
+                        Existing statistics will be updated with the latest data from Jira.
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ path('app_bugs_index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to list
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="syncButton">
+                            <i class="fas fa-sync"></i> Start Synchronization
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+            <div class="spinner-border text-light mb-3" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="mt-2">Synchronisation en cours...</h4>
+            <p>Cette opération peut prendre quelques minutes</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        #loadingOverlay {
+            backdrop-filter: blur(5px);
+        }
+        
+        .spinner-border {
+            animation-duration: 1s;
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date range to last 3 months
+            const today = new Date();
+            const threeMonthsAgo = new Date();
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+
+            document.getElementById('start_date').value = threeMonthsAgo.toISOString().split('T')[0];
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+
+            // Handle form submission
+            const form = document.getElementById('syncForm');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const syncButton = document.getElementById('syncButton');
+
+            form.addEventListener('submit', function() {
+                // Disable the submit button
+                syncButton.disabled = true;
+                syncButton.innerHTML = '<i class="fas fa-sync fa-spin"></i> Synchronisation en cours...';
+                
+                // Show loading overlay
+                loadingOverlay.classList.remove('d-none');
+                loadingOverlay.classList.add('d-flex');
+            });
+        });
+    </script>
+{% endblock %} 

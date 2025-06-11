@@ -1,0 +1,171 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bug Statistics{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Bug Statistics</h1>
+            <a href="{{ path('app_bugs_sync') }}" class="btn btn-primary">
+                <i class="fas fa-sync"></i> Sync Statistics
+            </a>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Bug Rate</h5>
+                        <p class="card-text">
+                            {% if averageBugRate is not null %}
+                                <strong>{{ (averageBugRate * 100)|number_format(1) }}%</strong> bugs par fonctionnalité livrée
+                                <small class="text-muted">(sur les 3 derniers mois)</small>
+                            {% else %}
+                                Pas assez de données
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Monthly Bugs</h5>
+                        <p class="card-text">
+                            {% if averageMonthlyBugs is not null %}
+                                <strong>{{ averageMonthlyBugs|number_format(1) }}</strong> bugs par mois
+                                <small class="text-muted">(sur les 3 derniers mois)</small>
+                            {% else %}
+                                Pas assez de données
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Monthly Details</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Bugs Created</th>
+                            <th>Features Delivered</th>
+                            <th>Bug Rate</th>
+                            <th>Last Sync</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in stats %}
+                            <tr>
+                                <td>{{ stat.month|date('F Y') }}</td>
+                                <td>
+                                    {{ stat.bugsCount }}
+                                    <button type="button" 
+                                            class="btn btn-link btn-sm p-0 ms-2" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#jqlModal{{ stat.month|date('Y-m') }}">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+
+                                    <!-- Modal for JQL -->
+                                    <div class="modal fade" id="jqlModal{{ stat.month|date('Y-m') }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">JQL Query for Bugs - {{ stat.month|date('F Y') }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label class="form-label">JQL Query:</label>
+                                                        <div class="input-group">
+                                                            <input type="text" 
+                                                                   class="form-control font-monospace" 
+                                                                   value="{{ jqlQueries[stat.month|date('Y-m')] }}" 
+                                                                   readonly>
+                                                            <button class="btn btn-outline-primary copy-btn" 
+                                                                    type="button" 
+                                                                    data-clipboard-text="{{ jqlQueries[stat.month|date('Y-m')] }}">
+                                                                <i class="fas fa-copy"></i> Copy
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted mt-2 d-block">
+                                                            Click the copy button and paste this query in Jira's advanced search to see the bugs.
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ stat.deliveredTicketsCount }}</td>
+                                <td>
+                                    {% set bugRate = stat.bugRate %}
+                                    {% if bugRate is not null %}
+                                        <div class="progress">
+                                            <div class="progress-bar {% if bugRate > 1 %}bg-danger{% elseif bugRate > 0.5 %}bg-warning{% else %}bg-success{% endif %}"
+                                                 role="progressbar"
+                                                 style="width: {{ min(bugRate * 100, 100) }}%"
+                                                 aria-valuenow="{{ bugRate * 100 }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                {{ (bugRate * 100)|number_format(1) }}%
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ stat.syncedAt|date('Y-m-d H:i') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var clipboard = new ClipboardJS('.copy-btn');
+            
+            clipboard.on('success', function(e) {
+                var button = e.trigger;
+                var originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                }, 2000);
+                
+                e.clearSelection();
+            });
+        });
+    </script>
+{% endblock %} 

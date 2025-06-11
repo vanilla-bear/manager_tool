@@ -123,7 +123,7 @@ class TimePeriod {
   // Getter et Setter pour vélocité communiqué
   public function getCommunicatedVelocity(): ?float
   {
-    return $this->finalVelocity;
+    return $this->communicatedVelocity;
   }
 
   public function setCommunicatedVelocity(?float $communicatedVelocity): self

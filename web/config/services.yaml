@@ -4,6 +4,11 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    jira.host: '%env(JIRA_HOST)%'
+    jira.board_id: '%env(JIRA_BOARD_ID)%'
+    jira.email: '%env(JIRA_EMAIL)%'
+    jira.token: '%env(JIRA_TOKEN)%'
+    jira.auth: 'Basic %env(JIRA_AUTH)%'
 
 services:
     # default configuration for services in *this* file
@@ -22,3 +27,31 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    jira.client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'createForBaseUri']
+        arguments:
+            $baseUri: 'https://%jira.host%'
+            $defaultOptions:
+                headers:
+                    Authorization: '%jira.auth%'
+
+    App\Service\SprintSyncService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\BugStatsService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\MTTRService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Controller\MTTRController:
+        arguments:
+            $jiraHost: '%jira.host%'

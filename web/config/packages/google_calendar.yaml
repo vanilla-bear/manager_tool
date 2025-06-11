@@ -1,2 +1,2 @@
 parameters:
-    config_dates: { date_debut: '2024-10-01', date_fin: '2025-01-31' }
+    config_dates: { date_debut: '2025-03-01', date_fin: '2025-06-28' }

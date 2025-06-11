@@ -34,6 +34,22 @@
                     <a class="nav-link" href="{{ path('app_team') }}">Team</a>
                 </li>
                 <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="metricsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Métriques
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="metricsDropdown">
+                        <li><h6 class="dropdown-header">Sprints</h6></li>
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_index') }}">Historique des Sprints</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_sync') }}">Synchronisation Jira</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">KPIs</h6></li>
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_velocity') }}">Vélocité des Sprints</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_bugs_index') }}">Taux de Bugs</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index') }}">MTTR</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_commitment_index')}}">Fiabilité</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Configuration
                     </a>
@@ -42,7 +58,6 @@
                         <li><a class="dropdown-item" href="{{ path('config_velocity') }}">Vélocité</a></li>
                     </ul>
                 </li>
-
             </ul>
         </div>
     </div>

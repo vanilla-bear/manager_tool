@@ -224,25 +224,23 @@ class SprintSyncService
         return $response->toArray();
     }
 
-    private function getStoryPoints(array $issue): int
+    private function getStoryPoints(array $issue): float
     {
         $fields = $issue['fields'];
         
-        // Liste des champs possibles pour les story points
         $storyPointFields = [
             'customfield_10016',
             'customfield_10026',
             'customfield_10200',
         ];
         
-        // Chercher la première valeur non nulle
         foreach ($storyPointFields as $field) {
             if (isset($fields[$field]) && $fields[$field] !== null) {
-                return (int) $fields[$field];
+                return (float) $fields[$field];
             }
         }
         
-        return 0;
+        return 0.0;
     }
 
     private function calculateCapacityDays(int $sprintId): float

@@ -9,6 +9,7 @@ parameters:
     jira.email: '%env(JIRA_EMAIL)%'
     jira.token: '%env(JIRA_TOKEN)%'
     jira.auth: 'Basic %env(JIRA_AUTH)%'
+    jira.base_url: '%env(JIRA_BASE_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -55,3 +56,23 @@ services:
     App\Controller\MTTRController:
         arguments:
             $jiraHost: '%jira.host%'
+
+    App\Service\SprintDiagnosticService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\ThroughputService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\DeploymentFrequencyService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\BlockersService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'

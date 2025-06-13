@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Blocages du Sprint en Cours - KPIs{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .summary-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .summary-card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .blocker-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .blocker-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .blocker-item:last-child {
+            border-bottom: none;
+        }
+        .warning {
+            color: #dc3545;
+        }
+        .success {
+            color: #198754;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid">
+        <h1 class="mb-4">Blocages du Sprint en Cours</h1>
+
+        {% if data.sprint %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Sprint : {{ data.sprint.name }}</h5>
+                            <p class="card-text">
+                                Du {{ data.sprint.startDate }} au {{ data.sprint.endDate }}
+                            </p>
+                            <a href="{{ data.sprint.link }}" target="_blank" class="btn btn-primary">
+                                Voir tous les blocages dans Jira
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="summary-card">
+                        <h3>Nombre de blocages</h3>
+                        <div class="summary-value {% if data.total > 0 %}warning{% else %}success{% endif %}">
+                            {{ data.total }}
+                        </div>
+                        <small class="text-muted">Blocages actifs dans le sprint</small>
+                    </div>
+                </div>
+            </div>
+
+            {% if data.blockers|length > 0 %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Liste des blocages</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Ticket</th>
+                                                <th>Description</th>
+                                                <th>Assigné à</th>
+                                                <th>Statut</th>
+                                                <th>Créé le</th>
+                                                <th>Durée</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for blocker in data.blockers %}
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{ blocker.link }}" target="_blank">{{ blocker.key }}</a>
+                                                    </td>
+                                                    <td>{{ blocker.summary }}</td>
+                                                    <td>{{ blocker.assignee }}</td>
+                                                    <td>{{ blocker.status }}</td>
+                                                    <td>{{ blocker.created }}</td>
+                                                    <td>
+                                                        {% if blocker.resolved %}
+                                                            {{ blocker.duration }} jour(s)
+                                                        {% else %}
+                                                            En cours
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    Aucun blocage actif dans le sprint en cours.
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-warning">
+                Aucun sprint actif trouvé.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %} 

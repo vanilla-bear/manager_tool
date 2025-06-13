@@ -26,36 +26,66 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ path('app_time_period_list') }}">Time Periods</a>
+                    <a class="nav-link" href="{{ path('app_home') }}">Accueil</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('app_team') }}">Team</a>
-                </li>
+                
+                <!-- Sprint Management -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="metricsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Métriques
+                    <a class="nav-link dropdown-toggle" href="#" id="sprintDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Gestion des Sprints
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="metricsDropdown">
-                        <li><h6 class="dropdown-header">Sprints</h6></li>
-                        <li><a class="dropdown-item" href="{{ path('app_sprint_index') }}">Historique des Sprints</a></li>
-                        <li><a class="dropdown-item" href="{{ path('app_sprint_sync') }}">Synchronisation Jira</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="sprintDropdown">
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_index') }}">Liste des Sprints</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><h6 class="dropdown-header">KPIs</h6></li>
-                        <li><a class="dropdown-item" href="{{ path('app_sprint_velocity') }}">Vélocité des Sprints</a></li>
-                        <li><a class="dropdown-item" href="{{ path('app_bugs_index') }}">Taux de Bugs</a></li>
-                        <li><a class="dropdown-item" href="{{ path('app_mttr_index') }}">MTTR</a></li>
-                        <li><a class="dropdown-item" href="{{ path('app_commitment_index')}}">Fiabilité</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_sync') }}">Synchroniser avec Jira</a></li>
                     </ul>
                 </li>
+
+                <!-- KPIs -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Configuration
+                    <a class="nav-link dropdown-toggle" href="#" id="kpiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        KPIs
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="configDropdown">
+                    <ul class="dropdown-menu" aria-labelledby="kpiDropdown">
+                        <li><a class="dropdown-item" href="{{ path('app_sprint_velocity') }}">Vélocité</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_throughput_index') }}">Débit</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_deployment_frequency_index') }}">Fréquence de Déploiement</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_blockers_index') }}">Blocages</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ path('app_bugs_index') }}">Bugs</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_mttr_index') }}">MTTR</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if app.request.get('_route') starts with 'app_blockers_' %}active{% endif %}" href="{{ path('app_blockers_index') }}">
+                                <i class="bi bi-exclamation-triangle"></i> Blocages
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Tools -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Outils
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
+                       
+                        <li><a class="dropdown-item" href="{{ path('app_commitment_index') }}">Engagement</a></li>
+                    </ul>
+                </li>
+
+                <!-- Administration -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Administration
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="{{ path('app_time_period_list') }}">Périodes</a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_team') }}">Utilisateurs</a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ path('app_google_calendar') }}">Google Calendar</a></li>
-                        <li><a class="dropdown-item" href="{{ path('config_velocity') }}">Vélocité</a></li>
+                        <li><a class="dropdown-item" href="{{ path('config_velocity') }}">Configuration Vélocité</a></li>
                     </ul>
                 </li>
             </ul>

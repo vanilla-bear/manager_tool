@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SprintRepository;
+use DateTimeImmutable;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SprintRepository::class)]
@@ -13,56 +15,45 @@ class Sprint
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $name = null;
-
     #[ORM\Column]
     private ?int $jiraId = null;
 
-    #[ORM\Column]
-    private ?int $completedPoints = null;
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?DateTimeImmutable $startDate = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?DateTimeImmutable $endDate = null;
+
+    #[ORM\Column(type: Types::FLOAT)]
+    private float $completedPoints = 0.0;
+
+    #[ORM\Column(type: Types::FLOAT)]
+    private float $committedPoints = 0.0;
+
+    #[ORM\Column(type: Types::FLOAT)]
+    private float $devsTerminesPoints = 0.0;
 
     #[ORM\Column]
-    private ?int $devsTerminesPoints = null;
+    private int $devsTerminesCount = 0;
 
-    #[ORM\Column]
-    private ?int $committedPoints = null;
+    #[ORM\Column(type: Types::FLOAT)]
+    private float $addedPointsDuringSprint = 0.0;
 
-    #[ORM\Column]
-    private ?float $capacityDays = null;
-
-    #[ORM\Column]
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $plannedCapacityDays = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $startDate = null;
+    #[ORM\Column(type: Types::FLOAT)]
+    private float $capacityDays = 0.0;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $endDate = null;
-
-    #[ORM\Column]
-    private ?\DateTimeImmutable $syncedAt = null;
-
-    #[ORM\Column]
-    private ?int $devsTerminesCount = 0;
-
-    #[ORM\Column(nullable: true)]
-    private ?int $addedPointsDuringSprint = 0;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?DateTimeImmutable $syncedAt = null;
 
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): static
-    {
-        $this->name = $name;
-        return $this;
     }
 
     public function getJiraId(): ?int
@@ -73,50 +64,103 @@ class Sprint
     public function setJiraId(int $jiraId): static
     {
         $this->jiraId = $jiraId;
+
         return $this;
     }
 
-    public function getCompletedPoints(): ?int
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getStartDate(): ?DateTimeImmutable
+    {
+        return $this->startDate;
+    }
+
+    public function setStartDate(DateTimeImmutable $startDate): static
+    {
+        $this->startDate = $startDate;
+
+        return $this;
+    }
+
+    public function getEndDate(): ?DateTimeImmutable
+    {
+        return $this->endDate;
+    }
+
+    public function setEndDate(DateTimeImmutable $endDate): static
+    {
+        $this->endDate = $endDate;
+
+        return $this;
+    }
+
+    public function getCompletedPoints(): float
     {
         return $this->completedPoints;
     }
 
-    public function setCompletedPoints(int $completedPoints): static
+    public function setCompletedPoints(float $completedPoints): static
     {
         $this->completedPoints = $completedPoints;
+
         return $this;
     }
 
-    public function getDevsTerminesPoints(): ?int
-    {
-        return $this->devsTerminesPoints;
-    }
-
-    public function setDevsTerminesPoints(int $points): static
-    {
-        $this->devsTerminesPoints = $points;
-        return $this;
-    }
-
-    public function getCommittedPoints(): ?int
+    public function getCommittedPoints(): float
     {
         return $this->committedPoints;
     }
 
-    public function setCommittedPoints(int $committedPoints): static
+    public function setCommittedPoints(float $committedPoints): static
     {
         $this->committedPoints = $committedPoints;
+
         return $this;
     }
 
-    public function getCapacityDays(): ?float
+    public function getDevsTerminesPoints(): float
     {
-        return $this->capacityDays;
+        return $this->devsTerminesPoints;
     }
 
-    public function setCapacityDays(float $capacityDays): static
+    public function setDevsTerminesPoints(float $devsTerminesPoints): static
     {
-        $this->capacityDays = $capacityDays;
+        $this->devsTerminesPoints = $devsTerminesPoints;
+
+        return $this;
+    }
+
+    public function getDevsTerminesCount(): int
+    {
+        return $this->devsTerminesCount;
+    }
+
+    public function setDevsTerminesCount(int $devsTerminesCount): static
+    {
+        $this->devsTerminesCount = $devsTerminesCount;
+
+        return $this;
+    }
+
+    public function getAddedPointsDuringSprint(): float
+    {
+        return $this->addedPointsDuringSprint;
+    }
+
+    public function setAddedPointsDuringSprint(float $addedPointsDuringSprint): static
+    {
+        $this->addedPointsDuringSprint = $addedPointsDuringSprint;
+
         return $this;
     }
 
@@ -125,42 +169,34 @@ class Sprint
         return $this->plannedCapacityDays;
     }
 
-    public function setPlannedCapacityDays(float $plannedCapacityDays): static
+    public function setPlannedCapacityDays(?float $plannedCapacityDays): static
     {
         $this->plannedCapacityDays = $plannedCapacityDays;
+
         return $this;
     }
 
-    public function getStartDate(): ?\DateTimeImmutable
+    public function getCapacityDays(): float
     {
-        return $this->startDate;
+        return $this->capacityDays;
     }
 
-    public function setStartDate(\DateTimeImmutable $startDate): static
+    public function setCapacityDays(float $capacityDays): static
     {
-        $this->startDate = $startDate;
+        $this->capacityDays = $capacityDays;
+
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeImmutable
-    {
-        return $this->endDate;
-    }
-
-    public function setEndDate(\DateTimeImmutable $endDate): static
-    {
-        $this->endDate = $endDate;
-        return $this;
-    }
-
-    public function getSyncedAt(): ?\DateTimeImmutable
+    public function getSyncedAt(): ?DateTimeImmutable
     {
         return $this->syncedAt;
     }
 
-    public function setSyncedAt(\DateTimeImmutable $syncedAt): static
+    public function setSyncedAt(DateTimeImmutable $syncedAt): static
     {
         $this->syncedAt = $syncedAt;
+
         return $this;
     }
 
@@ -186,28 +222,6 @@ class Sprint
             return null;
         }
         return ($this->devsTerminesPoints / $this->committedPoints) * 100;
-    }
-
-    public function getDevsTerminesCount(): ?int
-    {
-        return $this->devsTerminesCount;
-    }
-
-    public function setDevsTerminesCount(int $count): static
-    {
-        $this->devsTerminesCount = $count;
-        return $this;
-    }
-
-    public function getAddedPointsDuringSprint(): ?int
-    {
-        return $this->addedPointsDuringSprint;
-    }
-
-    public function setAddedPointsDuringSprint(?int $points): static
-    {
-        $this->addedPointsDuringSprint = $points;
-        return $this;
     }
 
     public function getAdjustedCompletionRate(): ?float

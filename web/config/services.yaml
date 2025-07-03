@@ -51,7 +51,6 @@ services:
     App\Service\MTTRService:
         arguments:
             $jiraClient: '@jira.client'
-            $jiraBoardId: '%jira.board_id%'
 
     App\Controller\MTTRController:
         arguments:
@@ -73,6 +72,11 @@ services:
             $jiraBoardId: '%jira.board_id%'
 
     App\Service\BlockersService:
+        arguments:
+            $jiraClient: '@jira.client'
+            $jiraBoardId: '%jira.board_id%'
+
+    App\Service\VelocityService:
         arguments:
             $jiraClient: '@jira.client'
             $jiraBoardId: '%jira.board_id%'

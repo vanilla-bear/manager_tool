@@ -208,7 +208,37 @@ class Sprint
         return $this->completedPoints / $this->capacityDays;
     }
 
+    /**
+     * Calcule le taux de completion par rapport au scope total (initial + ajouts)
+     * FORMULE: (Completed Points / (Committed Points + Added Points)) × 100
+     */
     public function getCompletionRate(): ?float
+    {
+        $totalScope = $this->committedPoints + $this->addedPointsDuringSprint;
+        if ($totalScope <= 0) {
+            return null;
+        }
+        return min(($this->completedPoints / $totalScope) * 100, 100);
+    }
+
+    /**
+     * Calcule le taux de completion des devs par rapport au scope total (initial + ajouts)
+     * FORMULE: (Devs Terminés Points / (Committed Points + Added Points)) × 100
+     */
+    public function getDevCompletionRate(): ?float
+    {
+        $totalScope = $this->committedPoints + $this->addedPointsDuringSprint;
+        if ($totalScope <= 0) {
+            return null;
+        }
+        return ($this->devsTerminesPoints / $totalScope) * 100;
+    }
+
+    /**
+     * Ancienne méthode - taux de completion par rapport au scope initial seulement
+     * @deprecated Utiliser getCompletionRate() à la place
+     */
+    public function getInitialCompletionRate(): ?float
     {
         if ($this->committedPoints <= 0) {
             return null;
@@ -216,7 +246,11 @@ class Sprint
         return min(($this->completedPoints / $this->committedPoints) * 100, 100);
     }
 
-    public function getDevCompletionRate(): ?float
+    /**
+     * Ancienne méthode - taux de completion des devs par rapport au scope initial seulement
+     * @deprecated Utiliser getDevCompletionRate() à la place
+     */
+    public function getInitialDevCompletionRate(): ?float
     {
         if ($this->committedPoints <= 0) {
             return null;

@@ -42,8 +42,74 @@
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        This will synchronize bug statistics for each month in the selected date range.
-                        Existing statistics will be updated with the latest data from Jira.
+                        <strong>Cette synchronisation va calculer les statistiques de bugs par mois depuis Jira.</strong>
+                        <br><small class="mt-2 d-block">
+                            <i class="fas fa-clock"></i> <strong>Recommandé :</strong> Synchroniser une fois par mois après la clôture du mois pour des statistiques précises.
+                        </small>
+                    </div>
+
+                    <!-- Explication détaillée du processus -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cogs"></i> Comment fonctionne la synchronisation des bugs ?
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>🔄 Processus de synchronisation :</h6>
+                                    <ol class="small">
+                                        <li><strong>Récupération du projet</strong> associé au board Jira</li>
+                                        <li><strong>Calcul par mois</strong> : pour chaque mois de la période</li>
+                                        <li><strong>Comptage des bugs</strong> créés dans le mois</li>
+                                        <li><strong>Comptage des tickets livrés</strong> dans le mois</li>
+                                        <li><strong>Calcul du taux de bugs</strong> : bugs / tickets livrés</li>
+                                        <li><strong>Sauvegarde</strong> des statistiques mensuelles</li>
+                                    </ol>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📊 Métriques calculées :</h6>
+                                    <ul class="small">
+                                        <li><strong>Nombre de bugs</strong> : tickets de type "Bug" créés</li>
+                                        <li><strong>Tickets livrés</strong> : tickets avec statut "Terminé"</li>
+                                        <li><strong>Taux de bugs</strong> : ratio bugs/tickets livrés</li>
+                                        <li><strong>Moyenne mensuelle</strong> : sur les 3 derniers mois</li>
+                                        <li><strong>Tendance</strong> : évolution du taux de bugs</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pages de KPI mises à jour -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i> Pages de KPI mises à jour
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>📈 Pages principales :</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>/bugs</strong> - Statistiques des bugs</li>
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>/</strong> - Dashboard principal</li>
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>Rapports KPI</strong> - Export des données</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📋 Métriques disponibles :</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success"></i> Taux de bugs par mois</li>
+                                        <li><i class="fas fa-check text-success"></i> Nombre de bugs créés</li>
+                                        <li><i class="fas fa-check text-success"></i> Nombre de tickets livrés</li>
+                                        <li><i class="fas fa-check text-success"></i> Tendance sur 3 mois</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
@@ -53,6 +119,35 @@
                         <button type="submit" class="btn btn-primary" id="syncButton">
                             <i class="fas fa-sync"></i> Start Synchronization
                         </button>
+                    </div>
+
+                    <!-- Détails techniques -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-code"></i> Détails techniques
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>🔗 Appels API Jira :</h6>
+                                    <ul class="small">
+                                        <li><code>GET /rest/agile/1.0/board/{boardId}</code> - Récupération du projet</li>
+                                        <li><code>GET /rest/api/2/search</code> - Comptage des bugs (JQL)</li>
+                                        <li><code>GET /rest/api/2/search</code> - Comptage des tickets livrés (JQL)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📝 Requêtes JQL utilisées :</h6>
+                                    <ul class="small">
+                                        <li><strong>Bugs :</strong> <code>project = "MD" AND issuetype = Bug AND created >= "YYYY-MM-01" AND created <= "YYYY-MM-31"</code></li>
+                                        <li><strong>Tickets livrés :</strong> <code>project = "MD" AND status = "Terminé" AND statusCategoryChangedDate >= "YYYY-MM-01" AND statusCategoryChangedDate <= "YYYY-MM-31"</code></li>
+                                        <li><strong>Calcul :</strong> Taux = Nombre de bugs / Nombre de tickets livrés</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>

@@ -40,54 +40,54 @@ help:
 
 # Commandes Docker Compose
 up:
-	cd $(WEB_DIR) && docker-compose up -d
+	docker-compose up -d
 
 down:
-	cd $(WEB_DIR) && docker-compose down
+	docker-compose down
 
 restart:
-	cd $(WEB_DIR) && docker-compose down && docker-compose up -d
+	docker-compose down && docker-compose up -d
 
 logs:
-	cd $(WEB_DIR) && docker-compose logs -f
+	docker-compose logs -f
 
 # Commande pour se connecter en tant qu'utilisateur spécifique dans le conteneur
 exec:
-	cd $(WEB_DIR) && docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) /bin/bash
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) /bin/bash
 
 exec-root:
-	cd $(WEB_DIR) && docker exec -ti $(CONTAINER_NAME) /bin/bash
+	docker exec -ti $(CONTAINER_NAME) /bin/bash
 
 # Nettoyer les images, volumes et conteneurs inutilisés
 clean:
-	cd $(WEB_DIR) && docker system prune -af --volumes
+	docker system prune -af --volumes
 
 # Recréer le conteneur sans utiliser le cache pour s'assurer que les changements sont pris en compte
 rebuild:
-	cd $(WEB_DIR) && docker-compose down
-	cd $(WEB_DIR) && docker-compose build --no-cache
-	cd $(WEB_DIR) && docker-compose up -d
+	docker-compose down
+	docker-compose build --no-cache
+	docker-compose up -d
 
 # Afficher l'état des conteneurs en cours d'exécution
 status:
-	cd $(WEB_DIR) && docker-compose ps
+	docker-compose ps
 
 # Appliquer chown pour localuser dans le conteneur
 chown:
-	cd $(WEB_DIR) && docker exec -ti $(CONTAINER_NAME) chown -R $(USER_NAME):$(USER_NAME) /app
+	docker exec -ti $(CONTAINER_NAME) chown -R $(USER_NAME):$(USER_NAME) /app
 
 # Installation des dépendances
 install:
-	cd $(WEB_DIR) && docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) composer install
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) composer install
 
 # Lancer les tests
 test:
-	cd $(WEB_DIR) && docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/phpunit
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/phpunit
 
 # Lancer le linting
 lint:
-	cd $(WEB_DIR) && docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php -l src/
-	cd $(WEB_DIR) && docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) composer run cs-fixer
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php -l src/
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) composer run cs-fixer
 
 # Synchroniser les données
 sync:

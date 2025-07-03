@@ -39,8 +39,6 @@
                         <th>Sprint</th>
                         <th>Period</th>
                         <th>Planned Capacity (days)</th>
-                        <th>Actual Capacity (days)</th>
-                        <th>Velocity (points/day)</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -53,15 +51,6 @@
                             </td>
                             <td>
                                 {{ sprint.plannedCapacityDays|number_format(1) }}
-                            </td>
-                            <td>{{ sprint.capacityDays|number_format(1) }}</td>
-                            <td>
-                                {% set velocity = sprint.velocityPerDay %}
-                                {% if velocity %}
-                                    {{ velocity|number_format(1) }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
                             </td>
                             <td>
                                 <a href="{{ path('app_sprint_edit', {'id': sprint.id}) }}" class="btn btn-sm btn-outline-primary">

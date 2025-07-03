@@ -23,6 +23,15 @@ class VelocityConfigService
     return $config['parameters']['team_velocity'] ?? 1.0;
   }
 
+  public function getExplanation(): ?string
+  {
+    // Charger la configuration YAML
+    $config = Yaml::parseFile($this->configFilePath);
+
+    // Retourne l'explication, ou null si non définie
+    return $config['parameters']['velocity_explanation'] ?? null;
+  }
+
   public function setVelocity(float $velocity): void
   {
     // Charger la configuration YAML actuelle
@@ -30,6 +39,31 @@ class VelocityConfigService
 
     // Mettre à jour la vélocité
     $config['parameters']['team_velocity'] = $velocity;
+
+    // Enregistrer la configuration mise à jour dans le fichier YAML
+    file_put_contents($this->configFilePath, Yaml::dump($config));
+  }
+
+  public function setExplanation(?string $explanation): void
+  {
+    // Charger la configuration YAML actuelle
+    $config = Yaml::parseFile($this->configFilePath);
+
+    // Mettre à jour l'explication
+    $config['parameters']['velocity_explanation'] = $explanation;
+
+    // Enregistrer la configuration mise à jour dans le fichier YAML
+    file_put_contents($this->configFilePath, Yaml::dump($config));
+  }
+
+  public function setVelocityAndExplanation(float $velocity, ?string $explanation): void
+  {
+    // Charger la configuration YAML actuelle
+    $config = Yaml::parseFile($this->configFilePath);
+
+    // Mettre à jour la vélocité et l'explication
+    $config['parameters']['team_velocity'] = $velocity;
+    $config['parameters']['velocity_explanation'] = $explanation;
 
     // Enregistrer la configuration mise à jour dans le fichier YAML
     file_put_contents($this->configFilePath, Yaml::dump($config));

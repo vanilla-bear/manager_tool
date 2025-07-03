@@ -21,20 +21,25 @@ class VelocityController extends AbstractController
   #[Route('/config/velocity', name: 'config_velocity')]
   public function configureVelocity(Request $request): Response
   {
-    // Charge la valeur de vélocité depuis le fichier YAML
+    // Charge la valeur de vélocité et l'explication depuis le fichier YAML
     $defaultVelocity = $this->velocityConfigService->getVelocity();
+    $defaultExplanation = $this->velocityConfigService->getExplanation();
 
-    // Création du formulaire avec la valeur de vélocité par défaut
-    $form = $this->createForm(VelocityType::class, ['velocity' => $defaultVelocity]);
+    // Création du formulaire avec les valeurs par défaut
+    $form = $this->createForm(VelocityType::class, [
+      'velocity' => $defaultVelocity,
+      'explanation' => $defaultExplanation
+    ]);
     $form->handleRequest($request);
 
     if ($form->isSubmitted() && $form->isValid()) {
       $velocity = $form->get('velocity')->getData();
+      $explanation = $form->get('explanation')->getData();
 
-      // Met à jour la vélocité dans le fichier YAML
-      $this->velocityConfigService->setVelocity($velocity);
+      // Met à jour la vélocité et l'explication dans le fichier YAML
+      $this->velocityConfigService->setVelocityAndExplanation($velocity, $explanation);
 
-      $this->addFlash('success', 'La vélocité a été mise à jour.');
+      $this->addFlash('success', 'La vélocité et son explication ont été mises à jour.');
 
       // Redirige ou recharge la page après la soumission
       return $this->redirectToRoute('config_velocity');
@@ -42,6 +47,7 @@ class VelocityController extends AbstractController
 
     return $this->render('velocity/configure.html.twig', [
       'form' => $form->createView(),
+      'currentExplanation' => $defaultExplanation,
     ]);
   }
 }

@@ -1,0 +1,347 @@
+{
+    "export_date": "2025-06-13 20:31:45",
+    "period": {
+        "start": "2025-04-01",
+        "end": "2025-07-01"
+    },
+    "blockers": {
+        "historical": {
+            "monthly": [
+                {
+                    "count": 13,
+                    "totalDuration": 124,
+                    "month": "April 2025",
+                    "blockers": [
+                        {
+                            "key": "MD-5303",
+                            "summary": "[STUDI] CLONE - Remplacement du champs video webm par video V3 sur la lame testimony",
+                            "created": "2025-04-02 10:12",
+                            "resolved": "2025-04-07 13:32",
+                            "duration": 5,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5303"
+                        },
+                        {
+                            "key": "MD-5312",
+                            "summary": "[STUDI] suppression fleche de defilement Trustpilot - A CHALLENGER",
+                            "created": "2025-04-07 15:51",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5312"
+                        },
+                        {
+                            "key": "MD-5240",
+                            "summary": "[AB TEST] [STUDI] [LP] Optimisation des formulaires PHASE 1 - Test de wording \"Suivant\" remplacé par \"Continuer\"",
+                            "created": "2025-04-14 22:40",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5240"
+                        },
+                        {
+                            "key": "MD-5241",
+                            "summary": "[AB TEST] [STUDI] [LP] Optimisation des formulaires PHASE 2 - Test de wording titre du formulaire",
+                            "created": "2025-04-14 22:40",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5241"
+                        },
+                        {
+                            "key": "MD-5326",
+                            "summary": "[STUDI] DS-V3 - retour de recette - Gestion des espacements",
+                            "created": "2025-04-09 15:30",
+                            "resolved": "2025-04-17 07:07",
+                            "duration": 7,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5326"
+                        },
+                        {
+                            "key": "MD-5328",
+                            "summary": "[STUDI] HP - retour de recette - Lame catalogue",
+                            "created": "2025-04-09 15:30",
+                            "resolved": "2025-04-17 07:07",
+                            "duration": 7,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5328"
+                        },
+                        {
+                            "key": "MD-5329",
+                            "summary": "[STUDI] DS-V3 - retour de recette - Footer",
+                            "created": "2025-04-11 15:33",
+                            "resolved": "2025-04-17 07:07",
+                            "duration": 5,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5329"
+                        },
+                        {
+                            "key": "MD-5308",
+                            "summary": "[AUTOMATE] 1er équipement - Modification du formulaire alternant pour récupérer la demande du premier équipement lors du booking",
+                            "created": "2025-04-22 16:45",
+                            "resolved": "2025-05-23 10:11",
+                            "duration": 30,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5308"
+                        },
+                        {
+                            "key": "MD-5396",
+                            "summary": "[AUTOMATE] 1er équipement - Mise à jour du plan d'appel, du mapping de la convention de formation et des filtres des files",
+                            "created": "2025-04-29 11:55",
+                            "resolved": "2025-05-23 15:18",
+                            "duration": 24,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5396"
+                        },
+                        {
+                            "key": "MD-5173",
+                            "summary": "[AUTOMATE] 1er équipement Prêt d'ordinateur- Mise à jour en masse de la file de prêt",
+                            "created": "2025-04-29 16:58",
+                            "resolved": "2025-05-23 15:43",
+                            "duration": 23,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5173"
+                        },
+                        {
+                            "key": "MD-5397",
+                            "summary": "ANNULE - [AUTOMATE] 1er équipement Remboursement de kit - Rationnalisation des champs et modification de la file",
+                            "created": "2025-04-14 09:42",
+                            "resolved": "2025-05-07 14:34",
+                            "duration": 23,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5397"
+                        },
+                        {
+                            "key": "MD-5347",
+                            "summary": "[FORMS] Formulaire de contact - On affiche la note trustpilot Studi sur le formulaire Academee",
+                            "created": "2025-04-30 16:38",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5347"
+                        },
+                        {
+                            "key": "MD-4984",
+                            "summary": "[LID] Consentement - Envoyer les consentements en totalité à Salesforce",
+                            "created": "2025-04-03 16:58",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4984"
+                        }
+                    ],
+                    "link": "https:\/\/studi-pedago.atlassian.net\/issues\/?jql=project = MD"
+                },
+                {
+                    "count": 7,
+                    "totalDuration": 27,
+                    "month": "May 2025",
+                    "blockers": [
+                        {
+                            "key": "MD-4883",
+                            "summary": "[AUTOMATE] POC inscription automatique - Ajouter le champ \"Ingrédients formation LMS\" dans la récupération depuis DBS",
+                            "created": "2025-05-12 08:12",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4883"
+                        },
+                        {
+                            "key": "MD-4146",
+                            "summary": "[STUDI FACTORY] Etudiez la mise en place d'un environnement de recette dédiée aux métiers",
+                            "created": "2025-05-14 08:59",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4146"
+                        },
+                        {
+                            "key": "MD-5398",
+                            "summary": "[AUTOMATE] 1er équipement - Modification du mapping du dossier de candidature (DC) ",
+                            "created": "2025-05-07 14:30",
+                            "resolved": "2025-05-23 10:32",
+                            "duration": 15,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5398"
+                        },
+                        {
+                            "key": "MD-5549",
+                            "summary": "[STUDI] Erreur JS lorsque connecté en contributeur en BO sur les pages financement",
+                            "created": "2025-05-16 17:22",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5549"
+                        },
+                        {
+                            "key": "MD-5263",
+                            "summary": "[AUTOMATE] Rupture - Révision du calcul date de fin de maintien de formation et blocage à 6 mois",
+                            "created": "2025-05-16 10:23",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5263"
+                        },
+                        {
+                            "key": "MD-4106",
+                            "summary": " [AUTOMATE] Statistiques conformité - Problème pourcentage sur le taux de conformité contrat ",
+                            "created": "2025-05-05 08:43",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4106"
+                        },
+                        {
+                            "key": "MD-5399",
+                            "summary": "[SIGNATURE STUDI] Création d'une signature paramétrable par les métiers",
+                            "created": "2025-05-21 12:07",
+                            "resolved": "2025-06-02 14:19",
+                            "duration": 12,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5399"
+                        }
+                    ],
+                    "link": "https:\/\/studi-pedago.atlassian.net\/issues\/?jql=project = MD"
+                },
+                {
+                    "count": 8,
+                    "totalDuration": 7,
+                    "month": "June 2025",
+                    "blockers": [
+                        {
+                            "key": "MD-5644",
+                            "summary": "[AUTOMATE] Derniers retours ADV CERFA\/CONVENTION ",
+                            "created": "2025-06-05 09:41",
+                            "resolved": "2025-06-12 10:41",
+                            "duration": 7,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5644"
+                        },
+                        {
+                            "key": "MD-4942",
+                            "summary": "switchDS-V3 - Vérification pages parcours découverte",
+                            "created": "2025-06-12 11:20",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4942"
+                        },
+                        {
+                            "key": "MD-5647",
+                            "summary": "[AUTOMATE] Relancer la synchro salesforce des dossiers corrigés",
+                            "created": "2025-06-02 09:24",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5647"
+                        },
+                        {
+                            "key": "MD-5697",
+                            "summary": "[STUDI] Refonte page confirmation - Intégration du CTA PARCOURS DECOUVERTE (2)",
+                            "created": "2025-06-10 15:21",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5697"
+                        },
+                        {
+                            "key": "MD-5726",
+                            "summary": "[AUTOMATE] Participation obligatoire entreprise - Mettre la nouvelle convention en place dans Automate",
+                            "created": "2025-06-12 07:55",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5726"
+                        },
+                        {
+                            "key": "MD-5439",
+                            "summary": "[STUDI FACTORY] [DS-V3] [Page métiers] Application du design système V3 sur les CARDS METIERS ( Theme V2 et V3)",
+                            "created": "2025-06-05 09:45",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5439"
+                        },
+                        {
+                            "key": "MD-5605",
+                            "summary": "[WEBPERF] Etude tech CDN",
+                            "created": "2025-06-13 14:50",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5605"
+                        },
+                        {
+                            "key": "MD-5443",
+                            "summary": "[STUDI FACTORY] [DS-V3] [Page métiers] Application du design système V3 sur les TAGS METIERS",
+                            "created": "2025-06-02 16:26",
+                            "resolved": null,
+                            "duration": 0,
+                            "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5443"
+                        }
+                    ],
+                    "link": "https:\/\/studi-pedago.atlassian.net\/issues\/?jql=project = MD"
+                },
+                {
+                    "count": 0,
+                    "totalDuration": 0,
+                    "month": "July 2025",
+                    "blockers": [],
+                    "link": "https:\/\/studi-pedago.atlassian.net\/issues\/?jql=project = MD"
+                }
+            ],
+            "total": 28,
+            "averageDuration": 5.6,
+            "blockedPercentage": 3.7,
+            "totalTasks": 760,
+            "period": {
+                "start": "2025-04-01",
+                "end": "2025-07-01"
+            }
+        },
+        "current_sprint": {
+            "blockers": [
+                {
+                    "key": "MD-4942",
+                    "summary": "switchDS-V3 - Vérification pages parcours découverte",
+                    "created": "2025-01-17 11:41",
+                    "resolved": null,
+                    "duration": 0,
+                    "status": "A faire",
+                    "assignee": "Mickael Mathias",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4942"
+                },
+                {
+                    "key": "MD-4984",
+                    "summary": "[LID] Consentement - Envoyer les consentements en totalité à Salesforce",
+                    "created": "2025-01-22 08:55",
+                    "resolved": null,
+                    "duration": 0,
+                    "status": "Test PO",
+                    "assignee": "Hermann SORAIS",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-4984"
+                },
+                {
+                    "key": "MD-5397",
+                    "summary": "ANNULE - [AUTOMATE] 1er équipement Remboursement de kit - Rationnalisation des champs et modification de la file",
+                    "created": "2025-04-10 18:11",
+                    "resolved": "2025-05-07 14:34",
+                    "duration": 26,
+                    "status": "Terminé",
+                    "assignee": "Non assigné",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5397"
+                },
+                {
+                    "key": "MD-5439",
+                    "summary": "[STUDI FACTORY] [DS-V3] [Page métiers] Application du design système V3 sur les CARDS METIERS ( Theme V2 et V3)",
+                    "created": "2025-04-17 14:43",
+                    "resolved": null,
+                    "duration": 0,
+                    "status": "Finalisé",
+                    "assignee": "Victor Chevallier",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5439"
+                },
+                {
+                    "key": "MD-5647",
+                    "summary": "[AUTOMATE] Relancer la synchro salesforce des dossiers corrigés",
+                    "created": "2025-05-26 14:33",
+                    "resolved": null,
+                    "duration": 0,
+                    "status": "En Cours",
+                    "assignee": "Federico CALO",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5647"
+                },
+                {
+                    "key": "MD-5726",
+                    "summary": "[AUTOMATE] Participation obligatoire entreprise - Mettre la nouvelle convention en place dans Automate",
+                    "created": "2025-06-12 07:46",
+                    "resolved": null,
+                    "duration": 0,
+                    "status": "A faire",
+                    "assignee": "Mickael Mathias",
+                    "link": "https:\/\/studi-pedago.atlassian.net\/browse\/MD-5726"
+                }
+            ],
+            "total": 6,
+            "sprint": {
+                "name": "S2 PI4 Onigiri (93)",
+                "startDate": "2025-06-12",
+                "endDate": "2025-07-02",
+                "link": "https:\/\/studi-pedago.atlassian.net\/issues\/?jql=project = MD"
+            }
+        }
+    }
+}

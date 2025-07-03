@@ -33,7 +33,16 @@
             </tr>
             <tr>
                 <th scope="row">Vélocité estimé</th>
-                <td>{{ timePeriod.estimatedVelocity }}</td>
+                <td>
+                    {% if timePeriod.estimatedVelocity %}
+                        <strong>{{ timePeriod.estimatedVelocity|number_format(1) }} points/sprint</strong>
+                        <button type="button" class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="collapse" data-bs-target="#velocityExplanation">
+                            <i class="fas fa-info-circle"></i> Comment c'est calculé ?
+                        </button>
+                    {% else %}
+                        <em>Non calculée</em>
+                    {% endif %}
+                </td>
             </tr>
             <tr>
                 <th scope="row">Vélocité communiqué</th>
@@ -49,6 +58,67 @@
             </tr>
             </tbody>
         </table>
+
+        {% if timePeriod.estimatedVelocity %}
+            <div class="collapse mt-3" id="velocityExplanation">
+                <div class="card card-body bg-light">
+                    <h5 class="card-title">
+                        <i class="fas fa-calculator"></i> Comment la vélocité estimée est calculée
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>📊 Formule de calcul :</h6>
+                            <p class="mb-2">
+                                <strong>Vélocité estimée = Vélocité globale × (Pourcentage de présence / 100)</strong>
+                            </p>
+                            
+                            <h6>🔍 Détail du calcul :</h6>
+                            <ol class="small">
+                                <li>On calcule la capacité de chaque membre (jours travaillés × heures/jour)</li>
+                                <li>On déduit les absences (congés, événements Google Calendar)</li>
+                                <li>On calcule le pourcentage de présence = (jours présents totaux / jours théoriques totaux) × 100</li>
+                                <li>On applique ce pourcentage à la vélocité globale configurée</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>💡 Exemple concret :</h6>
+                            <ul class="small">
+                                <li><strong>Vélocité globale :</strong> 39 points/sprint (100% de présence)</li>
+                                <li><strong>Équipe de 5 personnes</strong> sur 10 jours = 50 jours théoriques</li>
+                                <li><strong>3 personnes absentes 2 jours</strong> = 6 jours d'absence</li>
+                                <li><strong>Jours présents :</strong> 44 jours</li>
+                                <li><strong>Pourcentage de présence :</strong> (44/50) × 100 = 88%</li>
+                                <li><strong>Vélocité estimée :</strong> 39 × 0.88 = <strong>34.3 points/sprint</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if timePeriod.capacityData and timePeriod.capacityData.member_capacities %}
+                        <div class="mt-3">
+                            <h6>📈 Données actuelles de cette période :</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Vélocité globale :</strong> 39 points/sprint
+                                    <br><small class="text-muted">
+                                        <a href="{{ path('config_velocity') }}" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> Voir l'explication
+                                        </a>
+                                    </small>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Membres de l'équipe :</strong> {{ timePeriod.capacityData.member_capacities|length }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Durée :</strong> {{ timePeriod.workingDays }} jours ouvrés
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
 
         <h2 class="mt-5">Capacity Data</h2>
 

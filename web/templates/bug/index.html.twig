@@ -6,9 +6,26 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Bug Statistics</h1>
-            <a href="{{ path('app_bugs_sync') }}" class="btn btn-primary">
-                <i class="fas fa-sync"></i> Sync Statistics
-            </a>
+            <div class="d-flex align-items-center gap-3">
+                {% set lastSync = stats|first.syncedAt %}
+                {% if lastSync %}
+                    {% set daysSinceSync = (date()|date('U') - lastSync|date('U')) / 86400 %}
+                    {% if daysSinceSync > 30 %}
+                        <div class="alert alert-warning mb-0 py-2 px-3">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <small>Dernière sync : {{ lastSync|date('d/m/Y') }} ({{ daysSinceSync|round(0) }} jours)</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success mb-0 py-2 px-3">
+                            <i class="fas fa-check-circle"></i>
+                            <small>Dernière sync : {{ lastSync|date('d/m/Y') }}</small>
+                        </div>
+                    {% endif %}
+                {% endif %}
+                <a href="{{ path('app_bugs_sync') }}" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Sync Statistics
+                </a>
+            </div>
         </div>
 
         {% for message in app.flashes('success') %}
@@ -22,6 +39,50 @@
                 {{ message }}
             </div>
         {% endfor %}
+
+        {% set lastSync = stats|first.syncedAt %}
+        {% if lastSync %}
+            {% set daysSinceSync = (date()|date('U') - lastSync|date('U')) / 86400 %}
+            {% if daysSinceSync > 30 %}
+                <div class="alert alert-warning">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Données obsolètes !</strong> La dernière synchronisation remonte au {{ lastSync|date('d/m/Y') }} ({{ daysSinceSync|round(0) }} jours).
+                            <br><small class="text-muted">Pour des statistiques à jour, synchronisez maintenant les données depuis Jira.</small>
+                        </div>
+                        <a href="{{ path('app_bugs_sync') }}" class="btn btn-warning">
+                            <i class="fas fa-sync"></i> Synchroniser maintenant
+                        </a>
+                    </div>
+                </div>
+            {% elseif daysSinceSync > 7 %}
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Données à jour</strong> - Dernière synchronisation : {{ lastSync|date('d/m/Y') }}
+                            <br><small class="text-muted">Vous pouvez synchroniser pour obtenir les dernières données du mois en cours.</small>
+                        </div>
+                        <a href="{{ path('app_bugs_sync') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-sync"></i> Synchroniser
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Aucune donnée synchronisée</strong>
+                        <br><small class="text-muted">Synchronisez les données depuis Jira pour voir les statistiques des bugs.</small>
+                    </div>
+                    <a href="{{ path('app_bugs_sync') }}" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> Première synchronisation
+                    </a>
+                </div>
+            {% endif %}
 
         <div class="row mb-4">
             <div class="col-md-6">
@@ -133,7 +194,15 @@
                                         N/A
                                     {% endif %}
                                 </td>
-                                <td>{{ stat.syncedAt|date('Y-m-d H:i') }}</td>
+                                <td>
+                                    {% set daysSinceSync = (date()|date('U') - stat.syncedAt|date('U')) / 86400 %}
+                                    <span class="badge {% if daysSinceSync > 30 %}bg-danger{% elseif daysSinceSync > 7 %}bg-warning{% else %}bg-success{% endif %}">
+                                        {{ stat.syncedAt|date('d/m/Y') }}
+                                        {% if daysSinceSync > 30 %}
+                                            <i class="fas fa-exclamation-triangle ms-1"></i>
+                                        {% endif %}
+                                    </span>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

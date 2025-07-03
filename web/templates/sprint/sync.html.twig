@@ -42,8 +42,73 @@
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        This will synchronize all sprints that ended within the selected date range.
-                        Existing sprints will be updated with the latest data from Jira.
+                        <strong>Cette synchronisation va récupérer toutes les données des sprints depuis Jira et les synchroniser localement.</strong>
+                        <br><small class="mt-2 d-block">
+                            <i class="fas fa-clock"></i> <strong>Recommandé :</strong> Synchroniser après chaque fin de sprint ou une fois par semaine pour des données à jour.
+                        </small>
+                    </div>
+
+                    <!-- Explication détaillée du processus -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cogs"></i> Comment fonctionne la synchronisation ?
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>🔄 Processus de synchronisation :</h6>
+                                    <ol class="small">
+                                        <li><strong>Récupération des sprints</strong> depuis Jira pour la période sélectionnée</li>
+                                        <li><strong>Analyse de chaque sprint</strong> : récupération de tous les tickets</li>
+                                        <li><strong>Calcul des métriques</strong> : points engagés, terminés, ajoutés</li>
+                                        <li><strong>Mise à jour en base</strong> : création ou mise à jour des sprints locaux</li>
+                                        <li><strong>Horodatage</strong> de la dernière synchronisation</li>
+                                    </ol>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📊 Métriques calculées :</h6>
+                                    <ul class="small">
+                                        <li><strong>Points engagés</strong> : tickets créés avant le sprint</li>
+                                        <li><strong>Points terminés</strong> : tickets avec statut "Done"</li>
+                                        <li><strong>Points ajoutés</strong> : tickets créés pendant le sprint</li>
+                                        <li><strong>Capacité</strong> : jours de travail disponibles</li>
+                                        <li><strong>Vélocité</strong> : points par jour de capacité</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pages de KPI mises à jour -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i> Pages de KPI mises à jour
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>📈 Pages principales :</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>/sprints</strong> - Liste des sprints avec métriques</li>
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>/sprints/velocity</strong> - Analyse de vélocité</li>
+                                        <li><i class="fas fa-arrow-right text-primary"></i> <strong>/</strong> - Dashboard principal</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📋 Métriques disponibles :</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success"></i> Vélocité moyenne de l'équipe</li>
+                                        <li><i class="fas fa-check text-success"></i> Taux de completion des sprints</li>
+                                        <li><i class="fas fa-check text-success"></i> Points ajoutés pendant les sprints</li>
+                                        <li><i class="fas fa-check text-success"></i> Capacité vs performance réelle</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
@@ -53,6 +118,36 @@
                         <button type="submit" class="btn btn-primary" id="syncButton">
                             <i class="fas fa-sync"></i> Start Synchronization
                         </button>
+                    </div>
+
+                    <!-- Détails techniques -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-code"></i> Détails techniques
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>🔗 Appels API Jira :</h6>
+                                    <ul class="small">
+                                        <li><code>GET /rest/agile/1.0/board/{boardId}/sprint</code> - Liste des sprints</li>
+                                        <li><code>GET /rest/agile/1.0/sprint/{sprintId}</code> - Détails du sprint</li>
+                                        <li><code>GET /rest/api/2/search</code> - Tickets du sprint (JQL)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>📝 Filtres appliqués :</h6>
+                                    <ul class="small">
+                                        <li><strong>Projet :</strong> MD</li>
+                                        <li><strong>Types :</strong> Bug, Epic, Story, Task, Technique</li>
+                                        <li><strong>Statut terminé :</strong> "Done"</li>
+                                        <li><strong>Période :</strong> Selon vos dates sélectionnées</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>

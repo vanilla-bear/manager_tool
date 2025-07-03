@@ -16,6 +16,13 @@
             <div class="mb-3">
                 {{ form_label(form.velocity, 'Vélocité', {'label_attr': {'class': 'form-label'}}) }}
                 {{ form_widget(form.velocity, {'attr': {'class': 'form-control'}}) }}
+                <div class="form-text">Vélocité de l'équipe en points par jour (100% de présence)</div>
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(form.explanation, 'Explication', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.explanation, {'attr': {'class': 'form-control'}}) }}
+                {{ form_help(form.explanation) }}
             </div>
 
             <div class="text-end">
@@ -25,6 +32,20 @@
             {{ form_end(form) }}
         </div>
     </div>
+
+    <!-- Affichage de l'explication actuelle -->
+    {% if currentExplanation %}
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="h6 mb-0">
+                    <i class="fas fa-info-circle"></i> Explication actuelle de la vélocité
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ currentExplanation|nl2br }}</p>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Affichage des messages de succès -->
     {% for message in app.flashes('success') %}

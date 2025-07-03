@@ -87,7 +87,14 @@ class TimePeriodController extends AbstractController {
   }
 
   #[Route('/time-period/{id}/edit', name: 'app_time_period_edit')]
-  public function edit(int $id, Request $request, EntityManagerInterface $entityManager, DatePeriodService $datePeriodService): Response
+  public function edit(
+    int $id, 
+    Request $request, 
+    EntityManagerInterface $entityManager, 
+    DatePeriodService $datePeriodService,
+    TimePeriodCapacityCalculator $calculator,
+    VelocityConfigService $velocityConfigService
+  ): Response
   {
     $timePeriod = $entityManager->getRepository(TimePeriod::class)->find($id);
     if (!$timePeriod) {
@@ -97,9 +104,21 @@ class TimePeriodController extends AbstractController {
     $form = $this->createForm(TimePeriodEditType::class, $timePeriod);
     $form->handleRequest($request);
     if ($form->isSubmitted() && $form->isValid()) {
-      $workingDays = $datePeriodService->calculateWorkingDays($timePeriod->getStartDate(),$timePeriod->getEndDate()); // Vous pouvez passer un tableau de jours fériés si nécessaire
+      // Calculer les jours ouvrés
+      $workingDays = $datePeriodService->calculateWorkingDays($timePeriod->getStartDate(), $timePeriod->getEndDate());
       $timePeriod->setWorkingDays($workingDays);
+      
+      // Recalculer automatiquement la vélocité estimée si les dates ont changé
+      $result = $calculator->calculateAndUpdateTimePeriod($timePeriod, $velocityConfigService->getVelocity());
+      
       $entityManager->flush();
+      
+      $this->addFlash('success', sprintf(
+        'Période mise à jour. Vélocité estimée recalculée : %.1f points/sprint (%.1f%% de présence)',
+        $result['estimated_velocity'],
+        $result['velocity_data']['presence_percentage']
+      ));
+      
       return $this->redirectToRoute('app_time_period_list');
     }
 
@@ -129,7 +148,6 @@ class TimePeriodController extends AbstractController {
     int $id,
     EntityManagerInterface $entityManager,
     TimePeriodCapacityCalculator $calculator,
-    DatePeriodService $datePeriodService,
     VelocityConfigService $velocityConfigService
   ): Response
   {
@@ -141,27 +159,19 @@ class TimePeriodController extends AbstractController {
       throw $this->createNotFoundException('Time period not found');
     }
 
-    // Appeler la méthode calculateCapacity sur le service
-    $capacity = $calculator->calculateCapacity($timePeriod);
-    $timePeriod->setCapacityData($capacity);
-
-    // Calcul velocité
-    $sprintDuration = $datePeriodService->calculateWorkingDays($timePeriod->getStartDate(),$timePeriod->getEndDate(),false); // Vous pouvez passer un tableau de jours fériés si nécessaire
-    $globalVelocity = $velocityConfigService->getVelocity();
-    $velocity = $calculator->calculateVelocity($capacity,$globalVelocity,$sprintDuration);
-
-    // Extraire la vélocité ajustée pour la sauvegarder
-    $adjustedVelocity = $velocity['adjusted_velocity'];
-
-    // Mettre à jour le champ estimatedVelocity de l'entité TimePeriod
-    $timePeriod->setEstimatedVelocity($adjustedVelocity);
+    // Calculer et mettre à jour la vélocité estimée
+    $result = $calculator->calculateAndUpdateTimePeriod($timePeriod, $velocityConfigService->getVelocity());
 
     // Enregistrer les modifications en base de données
     $entityManager->persist($timePeriod);
     $entityManager->flush();
 
     // Ajouter un message flash pour afficher le résultat
-//    $this->addFlash('success', 'La capacité calculée est de : ' . $capacity);
+    $this->addFlash('success', sprintf(
+      'Vélocité estimée calculée : %.1f points/sprint (%.1f%% de présence)',
+      $result['estimated_velocity'],
+      $result['velocity_data']['presence_percentage']
+    ));
 
     // Rediriger vers la vue de la période de temps avec le message flash
     return $this->redirectToRoute('app_time_period_view', ['id' => $id]);

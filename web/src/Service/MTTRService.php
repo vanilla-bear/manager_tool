@@ -2,167 +2,250 @@
 
 namespace App\Service;
 
+use DateTime;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use DateTimeImmutable;
+use Psr\Log\LoggerInterface;
 
 class MTTRService
 {
-    private const POST_DEV_STATUSES = [
-        'A faire',
-        'Devs Terminés',
-        'Test PO',
-        'Finalisé',
-        'INTEGRATION',
-        'OK pour MEP',
-        'Terminé',
-        'Annulé'
-    ];
+    private const MAX_RESULTS_PER_PAGE = 50;
 
     public function __construct(
         private readonly HttpClientInterface $jiraClient,
-        private readonly string $jiraBoardId,
+        private readonly LoggerInterface $logger
     ) {
     }
 
-    public function getBugMTTRStats(\DateTimeInterface $startDate, \DateTimeInterface $endDate, ?string $lastBugKey = null): array
+    public function getMTTRData(DateTime $startDate, DateTime $endDate): array
     {
-        $boardInfo = $this->getBoardProject();
-        $jql = $this->buildMTTRJQL($boardInfo['projectKey'], $startDate, $endDate, $lastBugKey);
-        
-        return $this->fetchBugsWithTransitions($jql);
-    }
+        $jql = sprintf(
+            'project = MD AND issuetype IN (Bug, Incident) AND created >= "%s" AND created <= "%s" AND status = Done ORDER BY created ASC',
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
 
-    private function buildMTTRJQL(string $projectKey, \DateTimeInterface $startDate, \DateTimeInterface $endDate, ?string $lastBugKey = null): string
-    {
-        $conditions = [
-            sprintf('project = "%s"', $projectKey),
-            'issuetype = Bug',
-        ];
+        $response = $this->jiraClient->request('GET', "/rest/api/2/search", [
+            'query' => [
+                'jql' => $jql,
+                'maxResults' => self::MAX_RESULTS_PER_PAGE,
+                'fields' => 'key,summary,created,resolutiondate,status,issuetype'
+            ]
+        ]);
 
-        if ($lastBugKey) {
-            $conditions[] = sprintf('id > "%s"', $lastBugKey);
-        } else {
-            $conditions[] = sprintf('created >= "%s"', $startDate->format('Y-m-d'));
-            $conditions[] = sprintf('created <= "%s"', $endDate->format('Y-m-d'));
-        }
+        $data = $response->toArray();
+        $incidents = [];
+        $monthlyMTTR = [];
+        $totalResolutionTime = 0;
+        $resolvedCount = 0;
 
-        return implode(' AND ', $conditions) . ' ORDER BY created ASC';
-    }
+        foreach ($data['issues'] as $incident) {
+            if (!isset($incident['fields']['resolutiondate'])) {
+                continue;
+            }
 
-    private function fetchBugsWithTransitions(string $jql): array
-    {
-        $bugs = [];
-        $startAt = 0;
-        $maxResults = 50;
-
-        do {
-            $response = $this->jiraClient->request('GET', '/rest/api/2/search', [
-                'query' => [
-                    'jql' => $jql,
-                    'startAt' => $startAt,
-                    'maxResults' => $maxResults,
-                    'fields' => 'key,created,status,summary'
-                ]
-            ]);
-
-            $data = $response->toArray();
+            $createdDate = new DateTime($incident['fields']['created']);
+            $resolvedDate = new DateTime($incident['fields']['resolutiondate']);
+            $resolutionTime = $resolvedDate->diff($createdDate);
+            $resolutionHours = ($resolutionTime->days * 24) + $resolutionTime->h + ($resolutionTime->i / 60);
             
-            foreach ($data['issues'] as $issue) {
-                $transitions = $this->getIssueTransitions($issue['key']);
-                $mttrStats = $this->calculateMTTRStats($transitions, $issue['fields']['created']);
-                
-                $bugs[] = [
-                    'key' => $issue['key'],
-                    'summary' => $issue['fields']['summary'],
-                    'created' => $issue['fields']['created'],
-                    'currentStatus' => $issue['fields']['status']['name'],
-                    'mttrStats' => $mttrStats
+            $monthKey = $createdDate->format('Y-m');
+
+            if (!isset($monthlyMTTR[$monthKey])) {
+                $monthlyMTTR[$monthKey] = [
+                    'total_time' => 0,
+                    'count' => 0,
+                    'incidents' => []
                 ];
             }
 
-            $startAt += $maxResults;
-        } while ($startAt < $data['total']);
+            $monthlyMTTR[$monthKey]['total_time'] += $resolutionHours;
+            $monthlyMTTR[$monthKey]['count']++;
+            $monthlyMTTR[$monthKey]['incidents'][] = [
+                'key' => $incident['key'],
+                'summary' => $incident['fields']['summary'],
+                'type' => $incident['fields']['issuetype']['name'],
+                'created' => $createdDate->format('Y-m-d H:i'),
+                'resolved' => $resolvedDate->format('Y-m-d H:i'),
+                'resolution_time' => round($resolutionHours, 1),
+                'link' => sprintf('https://studi-pedago.atlassian.net/browse/%s', $incident['key'])
+            ];
+
+            $incidents[] = [
+                'key' => $incident['key'],
+                'summary' => $incident['fields']['summary'],
+                'type' => $incident['fields']['issuetype']['name'],
+                'created' => $createdDate->format('Y-m-d H:i'),
+                'resolved' => $resolvedDate->format('Y-m-d H:i'),
+                'resolution_time' => round($resolutionHours, 1),
+                'link' => sprintf('https://studi-pedago.atlassian.net/browse/%s', $incident['key'])
+            ];
+
+            $totalResolutionTime += $resolutionHours;
+            $resolvedCount++;
+        }
+
+        // Calculer le MTTR global
+        $globalMTTR = $resolvedCount > 0 ? round($totalResolutionTime / $resolvedCount, 1) : 0;
+
+        // Calculer le MTTR mensuel
+        foreach ($monthlyMTTR as $month => $data) {
+            $monthlyMTTR[$month]['mttr'] = $data['count'] > 0 ? round($data['total_time'] / $data['count'], 1) : 0;
+        }
+
+        return [
+            'global_mttr' => $globalMTTR,
+            'total_incidents' => count($incidents),
+            'resolved_incidents' => $resolvedCount,
+            'monthly_data' => array_values($monthlyMTTR),
+            'incidents' => $incidents
+        ];
+    }
+
+    /**
+     * Récupère les bugs avec leurs données MTTR depuis Jira
+     * 
+     * @param DateTime $startDate Date de début
+     * @param DateTime $endDate Date de fin
+     * @param string|null $lastBugKey Clé du dernier bug synchronisé (pour la pagination)
+     * @return array
+     */
+    public function getBugMTTRStats(DateTime $startDate, DateTime $endDate, ?string $lastBugKey = null): array
+    {
+        $bugs = [];
+        $startAt = 0;
+        $isLastPage = false;
+
+        while (!$isLastPage) {
+            // Construire la requête JQL
+            $jql = sprintf(
+                'project = MD AND issuetype = Bug AND created >= "%s" AND created <= "%s"',
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            // Si on a un dernier bug, on continue après lui
+            if ($lastBugKey) {
+                $jql .= sprintf(' AND key > "%s"', $lastBugKey);
+            }
+
+            $jql .= ' ORDER BY key ASC';
+
+            try {
+                $response = $this->jiraClient->request('GET', '/rest/api/2/search', [
+                    'query' => [
+                        'jql' => $jql,
+                        'startAt' => $startAt,
+                        'maxResults' => self::MAX_RESULTS_PER_PAGE,
+                        'fields' => [
+                            'key',
+                            'summary',
+                            'created',
+                            'status',
+                            'issuetype'
+                        ]
+                    ]
+                ]);
+
+                $data = $response->toArray();
+                
+                foreach ($data['issues'] as $issue) {
+                    $bugData = [
+                        'key' => $issue['key'],
+                        'summary' => $issue['fields']['summary'],
+                        'created' => $issue['fields']['created'],
+                        'currentStatus' => $issue['fields']['status']['name'],
+                        'mttrStats' => $this->calculateBugMTTRStats($issue['key'])
+                    ];
+                    
+                    $bugs[] = $bugData;
+                }
+
+                // Vérifier si on a atteint la dernière page
+                $total = $data['total'];
+                $startAt += self::MAX_RESULTS_PER_PAGE;
+                $isLastPage = $startAt >= $total;
+
+            } catch (\Exception $e) {
+                $this->logger->error('Error fetching bugs from Jira: ' . $e->getMessage());
+                break;
+            }
+        }
 
         return $bugs;
     }
 
-    private function getIssueTransitions(string $issueKey): array
+    /**
+     * Calcule les statistiques MTTR pour un bug spécifique
+     * 
+     * @param string $bugKey Clé du bug
+     * @return array|null
+     */
+    private function calculateBugMTTRStats(string $bugKey): ?array
     {
-        $response = $this->jiraClient->request('GET', "/rest/api/2/issue/{$issueKey}/changelog");
-        $data = $response->toArray();
-        
-        $transitions = [];
-        foreach ($data['values'] as $history) {
-            foreach ($history['items'] as $item) {
-                if ($item['field'] === 'status') {
-                    $transitions[] = [
-                        'fromStatus' => $item['fromString'],
-                        'toStatus' => $item['toString'],
-                        'created' => $history['created']
-                    ];
+        try {
+            // Récupérer l'historique des statuts du bug
+            $response = $this->jiraClient->request('GET', "/rest/api/2/issue/{$bugKey}?expand=changelog");
+            $issue = $response->toArray();
+
+            $createdAt = new DateTime($issue['fields']['created']);
+            $statusHistory = [];
+            $currentStatus = $issue['fields']['status']['name'];
+
+            // Analyser l'historique des changements
+            if (isset($issue['changelog']['histories'])) {
+                foreach ($issue['changelog']['histories'] as $history) {
+                    foreach ($history['items'] as $item) {
+                        if ($item['field'] === 'status') {
+                            $statusHistory[] = [
+                                'from' => $item['fromString'],
+                                'to' => $item['toString'],
+                                'date' => new DateTime($history['created'])
+                            ];
+                        }
+                    }
                 }
             }
-        }
 
-        return $transitions;
-    }
+            // Calculer les temps de transition
+            $mttrStats = [
+                'createdToTermine' => null,
+                'aFaireToTermine' => null,
+                'aFaireToDevsTermines' => null
+            ];
 
-    private function calculateMTTRStats(array $transitions, string $created): array
-    {
-        $stats = [
-            'createdToTermine' => null,
-            'aFaireToTermine' => null,
-            'aFaireToDevsTermines' => null
-        ];
+            $termineDate = null;
+            $aFaireDate = null;
+            $devsTerminesDate = null;
 
-        $statusDates = [
-            'created' => new DateTimeImmutable($created),
-            'A faire' => null,
-            'Devs Terminés' => null,
-            'Terminé' => null
-        ];
-
-        // Parcourir les transitions pour trouver les dates des statuts qui nous intéressent
-        foreach ($transitions as $transition) {
-            if ($transition['toStatus'] === 'A faire') {
-                $statusDates['A faire'] = new DateTimeImmutable($transition['created']);
-            }
-            if ($transition['toStatus'] === 'Devs Terminés') {
-                $statusDates['Devs Terminés'] = new DateTimeImmutable($transition['created']);
-            }
-            if ($transition['toStatus'] === 'Terminé') {
-                $statusDates['Terminé'] = new DateTimeImmutable($transition['created']);
-            }
-        }
-
-        // Calculer les différentes durées
-        if ($statusDates['Terminé']) {
-            $stats['createdToTermine'] = $statusDates['Terminé']->getTimestamp() - $statusDates['created']->getTimestamp();
-            
-            if ($statusDates['A faire']) {
-                $stats['aFaireToTermine'] = $statusDates['Terminé']->getTimestamp() - $statusDates['A faire']->getTimestamp();
-                
-                if ($statusDates['Devs Terminés']) {
-                    $stats['aFaireToDevsTermines'] = $statusDates['Devs Terminés']->getTimestamp() - $statusDates['A faire']->getTimestamp();
+            // Trouver les dates importantes
+            foreach ($statusHistory as $change) {
+                if ($change['to'] === 'Terminé') {
+                    $termineDate = $change['date'];
+                } elseif ($change['to'] === 'À faire') {
+                    $aFaireDate = $change['date'];
+                } elseif ($change['to'] === 'Devs terminés') {
+                    $devsTerminesDate = $change['date'];
                 }
             }
+
+            // Calculer les temps
+            if ($termineDate) {
+                $mttrStats['createdToTermine'] = $termineDate->getTimestamp() - $createdAt->getTimestamp();
+            }
+
+            if ($termineDate && $aFaireDate) {
+                $mttrStats['aFaireToTermine'] = $termineDate->getTimestamp() - $aFaireDate->getTimestamp();
+            }
+
+            if ($devsTerminesDate && $aFaireDate) {
+                $mttrStats['aFaireToDevsTermines'] = $devsTerminesDate->getTimestamp() - $aFaireDate->getTimestamp();
+            }
+
+            return $mttrStats;
+
+        } catch (\Exception $e) {
+            $this->logger->error("Error calculating MTTR stats for bug {$bugKey}: " . $e->getMessage());
+            return null;
         }
-
-        return $stats;
-    }
-
-    private function getBoardProject(): array
-    {
-        $response = $this->jiraClient->request('GET', "/rest/agile/1.0/board/{$this->jiraBoardId}");
-        $data = $response->toArray();
-        
-        if (!isset($data['location']['projectKey'])) {
-            throw new \RuntimeException('Could not determine project key from board');
-        }
-
-        return [
-            'projectKey' => $data['location']['projectKey'],
-            'projectId' => $data['location']['projectId'],
-        ];
     }
 } 

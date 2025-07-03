@@ -32,19 +32,83 @@
             </div>
         </div>
 
+        <!-- Section d'explication des métriques -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Comprendre les métriques
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><strong>📋 Committed Points (Scope Initial)</strong></h6>
+                        <p class="text-muted small">
+                            Points des tickets qui existaient <strong>avant le début du sprint</strong>.<br>
+                            C'est l'engagement initial de l'équipe.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><strong>➕ Added Points (Ajouts)</strong></h6>
+                        <p class="text-muted small">
+                            Points des tickets <strong>ajoutés pendant le sprint</strong>.<br>
+                            Montre l'évolution du scope initial.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><strong>✅ Completed Points (Livré)</strong></h6>
+                        <p class="text-muted small">
+                            Points des tickets avec le statut <strong>"Done"</strong>.<br>
+                            C'est ce qui a réellement été livré.
+                        </p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><strong>📊 Completion Rate (Taux de Réalisation)</strong></h6>
+                        <p class="text-muted small">
+                            Pourcentage = (Completed Points / <strong>(Committed + Added Points)</strong>) × 100<br>
+                            Mesure la capacité à livrer par rapport au scope total du sprint.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><strong>👥 Devs Terminés</strong></h6>
+                        <p class="text-muted small">
+                            Taux = (Devs Terminés Points / <strong>(Committed + Added Points)</strong>) × 100<br>
+                            Montre la progression des développeurs sur le scope total.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Sprint</th>
                         <th>Period</th>
-                        <th>Completed Points</th>
-                        <th>Committed Points</th>
+                        <th>
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Points des tickets existants avant le début du sprint - scope initial">
+                                📋 Committed Points
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </th>
+                        <th>
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Points des tickets ajoutés pendant le sprint - évolution du scope">
+                                ➕ Added Points
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </th>
+                        <th>
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Points des tickets avec statut 'Done' - ce qui a été réellement livré">
+                                ✅ Completed Points
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </th>
                         <th>Completion Rate</th>
                         <th>Devs Terminés</th>
-                        <th>Planned Capacity (days)</th>
-                        <th>Actual Capacity (days)</th>
-                        <th>Velocity (points/day)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,8 +118,22 @@
                             <td>
                                 {{ sprint.startDate|date('Y-m-d') }} to {{ sprint.endDate|date('Y-m-d') }}
                             </td>
-                            <td>{{ sprint.completedPoints }}</td>
-                            <td>{{ sprint.committedPoints }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ sprint.committedPoints }}</span>
+                            </td>
+                            <td>
+                                {% if sprint.addedPointsDuringSprint > 0 %}
+                                    <span class="badge bg-warning">+{{ sprint.addedPointsDuringSprint }}</span>
+                                    <small class="text-muted d-block">
+                                        ({{ sprint.addedPointsPercentage|number_format(1) }}%)
+                                    </small>
+                                {% else %}
+                                    <span class="badge bg-secondary">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ sprint.completedPoints }}</span>
+                            </td>
                             <td>
                                 {% set completion_rate = sprint.completionRate %}
                                 {% set dev_completion_rate = sprint.devCompletionRate %}
@@ -94,18 +172,6 @@
                                     </small>
                                 </div>
                             </td>
-                            <td>
-                                {{ sprint.plannedCapacityDays|number_format(1) }}
-                            </td>
-                            <td>{{ sprint.capacityDays|number_format(1) }}</td>
-                            <td>
-                                {% set velocity = sprint.velocityPerDay %}
-                                {% if velocity %}
-                                    {{ velocity|number_format(1) }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -117,4 +183,17 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Initialiser les tooltips Bootstrap
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
 {% endblock %} 

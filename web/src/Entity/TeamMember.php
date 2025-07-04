@@ -18,6 +18,9 @@ class TeamMember
   #[ORM\Column(type: 'string', length: 255)]
   private string $name;
 
+  #[ORM\Column(type: 'string', length: 255, nullable: true)]
+  private ?string $jiraId = null;
+
   // Additional fields and methods...
 
   public function getId(): ?int
@@ -33,6 +36,17 @@ class TeamMember
   public function setName(string $name): self
   {
     $this->name = $name;
+    return $this;
+  }
+
+  public function getJiraId(): ?string
+  {
+    return $this->jiraId;
+  }
+
+  public function setJiraId(?string $jiraId): self
+  {
+    $this->jiraId = $jiraId;
     return $this;
   }
 

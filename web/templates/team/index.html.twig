@@ -13,10 +13,18 @@
             <div class="card-body">
                 {{ form_start(form, {'attr': {'class': 'row g-3'}}) }}
 
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         {{ form_label(form.name, 'Name', {'label_attr': {'class': 'form-label'}}) }}
                         {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form_label(form.jiraId, 'Jira ID', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.jiraId, {'attr': {'class': 'form-control'}}) }}
+                        <small class="form-text text-muted">Optional: Jira user ID for integration</small>
                     </div>
                 </div>
 
@@ -36,6 +44,7 @@
                 <thead class="table-primary">
                 <tr>
                     <th>Name</th>
+                    <th>Jira ID</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
@@ -45,6 +54,10 @@
                         <td>
                             <span class="name-display">{{ member.name }}</span>
                             <input type="text" class="form-control name-input d-none" value="{{ member.name }}">
+                        </td>
+                        <td>
+                            <span class="jira-id-display">{{ member.jiraId ?: '-' }}</span>
+                            <input type="text" class="form-control jira-id-input d-none" value="{{ member.jiraId }}">
                         </td>
                         <td>
                             <button class="btn btn-sm btn-warning edit-btn">Edit</button>
@@ -70,6 +83,8 @@
                     const row = button.closest('tr');
                     row.querySelector('.name-display').classList.add('d-none');
                     row.querySelector('.name-input').classList.remove('d-none');
+                    row.querySelector('.jira-id-display').classList.add('d-none');
+                    row.querySelector('.jira-id-input').classList.remove('d-none');
                     row.querySelector('.edit-btn').classList.add('d-none');
                     row.querySelector('.save-btn').classList.remove('d-none');
                     row.querySelector('.cancel-btn').classList.remove('d-none');
@@ -81,6 +96,8 @@
                     const row = button.closest('tr');
                     row.querySelector('.name-display').classList.remove('d-none');
                     row.querySelector('.name-input').classList.add('d-none');
+                    row.querySelector('.jira-id-display').classList.remove('d-none');
+                    row.querySelector('.jira-id-input').classList.add('d-none');
                     row.querySelector('.edit-btn').classList.remove('d-none');
                     row.querySelector('.save-btn').classList.add('d-none');
                     row.querySelector('.cancel-btn').classList.add('d-none');
@@ -92,26 +109,33 @@
                     const row = button.closest('tr');
                     const memberId = row.dataset.memberId;
                     const newName = row.querySelector('.name-input').value;
+                    const newJiraId = row.querySelector('.jira-id-input').value;
 
-                    fetch(`/team/update-name/${memberId}`, {
+                    fetch(`/team/update/${memberId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        body: JSON.stringify({ name: newName })
+                        body: JSON.stringify({ 
+                            name: newName,
+                            jiraId: newJiraId
+                        })
                     })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
                                 row.querySelector('.name-display').textContent = newName;
+                                row.querySelector('.jira-id-display').textContent = newJiraId || '-';
                                 row.querySelector('.name-display').classList.remove('d-none');
                                 row.querySelector('.name-input').classList.add('d-none');
+                                row.querySelector('.jira-id-display').classList.remove('d-none');
+                                row.querySelector('.jira-id-input').classList.add('d-none');
                                 row.querySelector('.edit-btn').classList.remove('d-none');
                                 row.querySelector('.save-btn').classList.add('d-none');
                                 row.querySelector('.cancel-btn').classList.add('d-none');
                             } else {
-                                alert('Failed to update name');
+                                alert('Failed to update member');
                             }
                         });
                 });

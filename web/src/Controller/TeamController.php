@@ -37,8 +37,8 @@ class TeamController extends AbstractController
     ]);
   }
 
-  #[Route('/team/update-name/{id}', name: 'app_team_update_name', methods: ['POST'])]
-  public function updateName(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+  #[Route('/team/update/{id}', name: 'app_team_update', methods: ['POST'])]
+  public function update(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
   {
     $teamMember = $entityManager->getRepository(TeamMember::class)->find($id);
 
@@ -47,13 +47,17 @@ class TeamController extends AbstractController
     }
 
     $data = json_decode($request->getContent(), true);
+    
     if (isset($data['name']) && !empty($data['name'])) {
       $teamMember->setName($data['name']);
-      $entityManager->flush();
-      return new JsonResponse(['success' => true]);
     }
-
-    return new JsonResponse(['success' => false, 'message' => 'Invalid name'], 400);
+    
+    if (isset($data['jiraId'])) {
+      $teamMember->setJiraId($data['jiraId'] ?: null);
+    }
+    
+    $entityManager->flush();
+    return new JsonResponse(['success' => true]);
   }
 
   #[Route('/team/{id}/delete', name: 'app_team_delete', methods: ['POST'])]

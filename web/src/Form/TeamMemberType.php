@@ -13,7 +13,19 @@ class TeamMemberType extends AbstractType
   public function buildForm(FormBuilderInterface $builder, array $options): void
   {
     $builder
-      ->add('name', TextType::class);
+      ->add('name', TextType::class, [
+        'label' => 'Name',
+        'attr' => [
+          'placeholder' => 'Enter team member name'
+        ]
+      ])
+      ->add('jiraId', TextType::class, [
+        'label' => 'Jira ID',
+        'required' => false,
+        'attr' => [
+          'placeholder' => 'Enter Jira user ID (optional)'
+        ]
+      ]);
   }
 
   public function configureOptions(OptionsResolver $resolver): void
@@ -22,6 +34,4 @@ class TeamMemberType extends AbstractType
       'data_class' => TeamMember::class,
     ]);
   }
-
-
 }

@@ -156,7 +156,8 @@ class SprintSyncService
                         'created',            // Date de création
                         'updated',            // Date de mise à jour
                         'sprint'              // Champ sprint pour voir l'historique
-                    ]
+                    ],
+                    'expand' => 'changelog'   // Récupérer l'historique des changements
                 ]
             ]);
 
@@ -197,9 +198,13 @@ class SprintSyncService
                 $committedPoints += $storyPoints;
             }
             
-            // Si le ticket est terminé, on le compte dans les deux catégories
+            // Si le ticket est terminé (Done), on le compte dans completedPoints
             if ($issue['fields']['status']['statusCategory']['key'] === 'done') {
                 $completedPoints += $storyPoints;
+            }
+            
+            // Si le ticket est passé par le statut "Dev Terminé", on le compte dans devsTerminesPoints
+            if ($this->hasPassedThroughDevTermineStatus($issue)) {
                 $devsTerminesPoints += $storyPoints;
                 $devsTerminesCount++;
             }
@@ -216,6 +221,44 @@ class SprintSyncService
             'devsTerminesCount' => $devsTerminesCount,
             'addedPointsDuringSprint' => $addedPointsDuringSprint
         ];
+    }
+
+    /**
+     * Vérifie si un ticket est passé par le statut "Dev Terminé" en analysant son changelog
+     */
+    private function hasPassedThroughDevTermineStatus(array $issue): bool
+    {
+        // Vérifier d'abord le statut actuel
+        $currentStatus = $issue['fields']['status']['name'];
+        if ($currentStatus === 'Dev Terminé') {
+            return true;
+        }
+        
+        // Vérifier l'historique des changements
+        if (!isset($issue['changelog']) || !isset($issue['changelog']['histories'])) {
+            return false;
+        }
+        
+        foreach ($issue['changelog']['histories'] as $history) {
+            if (!isset($history['items'])) {
+                continue;
+            }
+            
+            foreach ($history['items'] as $item) {
+                // Vérifier si c'est un changement de statut
+                if ($item['field'] === 'status') {
+                    $fromStatus = $item['fromString'] ?? '';
+                    $toStatus = $item['toString'] ?? '';
+                    
+                    // Si le ticket est passé par "Dev Terminé" (dans n'importe quel sens)
+                    if ($fromStatus === 'Dev Terminé' || $toStatus === 'Dev Terminé') {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 
     private function fetchSprintInfo(int $sprintId): array

@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Debug - {{ teamMember.name }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-bug"></i> Debug: {{ teamMember.name }}
+            </h1>
+            <div>
+                <a href="{{ path('app_team_profile_show', {'id': teamMember.id}) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><strong>Total Issues:</strong> {{ totalIssues }}</li>
+                            <li><strong>Total Validated:</strong> {{ totalValidated }}</li>
+                            <li><strong>Validation Rate:</strong> {{ validationRate }}%</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-check-circle"></i> Validated Statuses</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            {% for status in validatedStatuses %}
+                                <li><code>{{ status }}</code></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tags"></i> Status Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for status, count in statusCounts %}
+                            {% set isValidated = status in validatedStatuses %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="{% if isValidated %}text-success fw-bold{% endif %}">
+                                    {{ status }}
+                                    {% if isValidated %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    {% endif %}
+                                </span>
+                                <span class="badge bg-primary">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> Issue Type Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for type, count in issueTypes %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ type }}</span>
+                                <span class="badge bg-info">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-flag-checkered"></i> Sprint Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if sprintDistribution is empty %}
+                            <div class="alert alert-warning">Aucun sprint détecté dans les tickets Jira.</div>
+                        {% else %}
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Sprint</th>
+                                        <th>Tickets</th>
+                                        <th>Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sprint, data in sprintDistribution %}
+                                        <tr>
+                                            <td>{{ sprint }}</td>
+                                            <td>{{ data.tickets }}</td>
+                                            <td>{{ data.points }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if totalValidated == 0 %}
+            <div class="alert alert-warning mt-4">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>No validated tickets found!</strong><br>
+                This means none of the tickets have statuses that are considered "validated". 
+                The current validated statuses are: <code>{{ validatedStatuses|join('</code>, <code>')|raw }}</code>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %} 

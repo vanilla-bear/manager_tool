@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Team Member Profiles{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Team Member Profiles</h1>
+            <div>
+                <form action="{{ path('app_team_profiles_generate_all') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-sync"></i> Generate All Profiles
+                    </button>
+                </form>
+                <a href="{{ path('app_team') }}" class="btn btn-secondary">
+                    <i class="fas fa-users"></i> Manage Team
+                </a>
+            </div>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="row">
+            {% for profileData in profiles %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-user-circle"></i> {{ profileData.member.name }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if profileData.hasJiraId %}
+                                <p class="text-muted small">
+                                    <i class="fas fa-id-badge"></i> Jira ID: {{ profileData.member.jiraId }}
+                                </p>
+                                
+                                {% if profileData.profile %}
+                                    <div class="mb-3">
+                                        <small class="text-muted">Last updated: {{ profileData.profile.lastSyncAt|date('Y-m-d H:i') }}</small>
+                                    </div>
+                                    
+                                    {% set stats = profileData.profile.productivityStats %}
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="border-end">
+                                                <h4 class="text-primary mb-0">{{ stats.totalTickets }}</h4>
+                                                <small class="text-muted">Total Tickets</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 class="text-success mb-0">{{ stats.totalPoints }}</h4>
+                                            <small class="text-muted">Total Points</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Avg/Sprint:</span>
+                                            <span class="fw-bold">{{ stats.avgTicketsPerSprint }} tickets, {{ stats.avgPointsPerSprint }} pts</span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-chart-line text-muted fa-2x mb-2"></i>
+                                        <p class="text-muted">No profile data available</p>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                                    <p class="text-muted">No Jira ID configured</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ path('app_team_profile_show', {'id': profileData.member.id}) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View Profile
+                                </a>
+                                
+                                {% if profileData.hasJiraId %}
+                                    <button class="btn btn-sm btn-outline-success refresh-btn" 
+                                            data-member-id="{{ profileData.member.id }}">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-users text-muted fa-3x mb-3"></i>
+                        <h3 class="text-muted">No team members found</h3>
+                        <p class="text-muted">Add team members first to generate their profiles.</p>
+                        <a href="{{ path('app_team') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Team Members
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gestion des boutons de refresh
+            document.querySelectorAll('.refresh-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const memberId = this.dataset.memberId;
+                    const originalText = this.innerHTML;
+                    
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                    
+                    fetch(`/team/profile/${memberId}/refresh`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Recharger la page pour afficher les nouvelles données
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                            this.disabled = false;
+                            this.innerHTML = originalText;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while refreshing the profile');
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                    });
+                });
+            });
+        });
+    </script>
+{% endblock %} 

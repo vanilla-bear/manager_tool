@@ -3,7 +3,12 @@
 {% block title %}Team Members{% endblock %}
 
 {% block body %}
-        <h1 class="mb-4">Team Members</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Team Members</h1>
+            <a href="{{ path('app_team_profiles') }}" class="btn btn-info">
+                <i class="fas fa-chart-line"></i> View Profiles
+            </a>
+        </div>
 
         <!-- Formulaire pour ajouter un membre -->
         <div class="card shadow-sm mb-5">
@@ -142,4 +147,9 @@
             });
         });
     </script>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}

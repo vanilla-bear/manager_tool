@@ -1,0 +1,350 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ teamMember.name }} - Profile{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>
+                    <i class="fas fa-user-circle"></i> {{ teamMember.name }}
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-id-badge"></i> Jira ID: {{ teamMember.jiraId ?: 'Not configured' }}
+                </p>
+            </div>
+            <div>
+                {% if teamMember.jiraId %}
+                    <form action="{{ path('app_team_profile_generate', {'id': teamMember.id}) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-sync"></i> Generate Profile
+                        </button>
+                    </form>
+                                    <a href="{{ path('app_team_profile_export', {'id': teamMember.id}) }}" class="btn btn-success me-2">
+                    <i class="fas fa-download"></i> Export JSON
+                </a>
+                <a href="{{ path('app_team_profile_debug', {'id': teamMember.id}) }}" class="btn btn-warning me-2">
+                    <i class="fas fa-bug"></i> Debug
+                </a>
+                {% endif %}
+                <a href="{{ path('app_team_profiles') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Profiles
+                </a>
+            </div>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% if not teamMember.jiraId %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>No Jira ID configured.</strong> Please configure a Jira ID for this team member to generate their profile.
+            </div>
+        {% elseif not profile %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>No profile data available.</strong> Click "Generate Profile" to analyze the last 12 months of activity.
+            </div>
+        {% else %}
+            <!-- Informations générales -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-calendar"></i> Analysis Period</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>Period:</strong> {{ profile.periodStart|date('Y-m-d') }} to {{ profile.periodEnd|date('Y-m-d') }}</p>
+                            <p class="mb-1"><strong>Last Updated:</strong> {{ profile.lastSyncAt|date('Y-m-d H:i:s') }}</p>
+                            <p class="mb-0"><strong>Analysis Date:</strong> {{ profile.analysisDate|date('Y-m-d H:i:s') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Quick Stats</h5>
+                        </div>
+                        <div class="card-body">
+                            {% set productivity = profile.productivityStats %}
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <h4 class="text-primary mb-0">{{ productivity.totalTickets }}</h4>
+                                    <small class="text-muted">Tickets</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 class="text-success mb-0">{{ productivity.totalPoints }}</h4>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 class="text-info mb-0">{{ productivity.sprintCount }}</h4>
+                                    <small class="text-muted">Sprints</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productivité -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-rocket"></i> Productivity</h5>
+                </div>
+                <div class="card-body">
+                    {% set productivity = profile.productivityStats %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Activity Metrics</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Total Tickets:</strong> {{ productivity.totalTickets }}</li>
+                                <li><strong>Total Points:</strong> {{ productivity.totalPoints }}</li>
+                                <li><strong>Bug Tasks:</strong> {{ productivity.bugTasks }}</li>
+                                <li><strong>Average Tickets/Sprint:</strong> {{ productivity.avgTicketsPerSprint }}</li>
+                                <li><strong>Average Points/Sprint:</strong> {{ productivity.avgPointsPerSprint }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Ticket Type Distribution</h6>
+                            {% for type, count in productivity.typeDistribution %}
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>{{ type }}:</span>
+                                    <span class="badge bg-primary">{{ count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Qualité -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-award"></i> Quality & Reliability</h5>
+                </div>
+                <div class="card-body">
+                    {% set quality = profile.qualityStats %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Quality Metrics</h6>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <strong>Total Validated:</strong> {{ quality.totalValidated }}<br>
+                                    <small class="text-muted">
+                                        Nombre total de tickets (tous types) terminés ou validés.
+                                    </small>
+                                </li>
+                                <li>
+                                    <strong>QA Returns:</strong> {{ quality.qaReturns }}<br>
+                                    <small class="text-muted">
+                                        Nombre de tickets <b>Bug task</b> validés (statuts terminés ou validés).
+                                    </small>
+                                </li>
+                                <li>
+                                    <strong>Validation Rate:</strong> {{ quality.validationRate }}%<br>
+                                    <small class="text-muted">
+                                        Pourcentage de tickets <b>Bug task</b> validés parmi tous les tickets validés.<br>
+                                        (Total Bug task validés / Total tickets validés)
+                                    </small>
+                                </li>
+                                <li>
+                                    <strong>Average QA Returns:</strong> {{ quality.avgQAReturns }}<br>
+                                    <small class="text-muted">
+                                        Moyenne de retours QA par ticket <b>Bug task</b> validé.
+                                    </small>
+                                </li>
+                            </ul>
+                            <div class="alert alert-info mt-2" style="font-size:0.95em;">
+                                <i class="fas fa-info-circle"></i>
+                                <b>Note :</b> Le taux de validation et la moyenne des retours QA sont calculés uniquement sur les tickets <b>Bug task</b> validés.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <div class="progress-circle" style="width: 120px; height: 120px; margin: 0 auto;">
+                                    <div class="progress-circle-value">{{ quality.validationRate }}%</div>
+                                    <div class="progress-circle-label">Validation Rate</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impact -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-star"></i> Impact</h5>
+                </div>
+                <div class="card-body">
+                    {% set impact = profile.impactStats %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Epic Participation</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Total Epics:</strong> {{ impact.epicCount }}</li>
+                                <li><strong>Strategic Epics:</strong> {{ impact.strategicEpicCount }}</li>
+                            </ul>
+                            
+                            {% if impact.strategicEpics is not empty %}
+                                <h6 class="mt-3">Strategic Epics</h6>
+                                {% for epicKey, epic in impact.strategicEpics %}
+                                    <div class="border rounded p-2 mb-2">
+                                        <strong>{{ epic.name }}</strong><br>
+                                        <small class="text-muted">{{ epic.tickets }} tickets, {{ epic.points }} points</small>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Biggest Tickets (Top 5)</h6>
+                            {% for ticket in impact.biggestTickets|slice(0, 5) %}
+                                <div class="border rounded p-2 mb-2">
+                                    <strong>{{ ticket.key }}</strong> - {{ ticket.points }} pts<br>
+                                    <small class="text-muted">{{ ticket.summary|length > 50 ? ticket.summary|slice(0, 50) ~ '...' : ticket.summary }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collaboration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-handshake"></i> Collaboration & Initiative</h5>
+                </div>
+                <div class="card-body">
+                    {% set collaboration = profile.collaborationStats %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Collaboration Metrics</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Technical Tickets:</strong> {{ collaboration.technicalTickets }}</li>
+                                <li><strong>Cross-team Tickets:</strong> {{ collaboration.crossTeamTickets }}</li>
+                                <li><strong>Collaboration Rate:</strong> {{ collaboration.collaborationRate }}%</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <div class="progress-circle" style="width: 120px; height: 120px; margin: 0 auto;">
+                                    <div class="progress-circle-value">{{ collaboration.collaborationRate }}%</div>
+                                    <div class="progress-circle-label">Collaboration Rate</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Évolution -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Evolution</h5>
+                </div>
+                <div class="card-body">
+                    {% set evolution = profile.evolutionStats %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6>Monthly Activity</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Tickets</th>
+                                            <th>Points</th>
+                                            <th>Avg Complexity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for month, stats in evolution.monthlyStats %}
+                                            <tr>
+                                                <td>{{ month }}</td>
+                                                <td>{{ stats.tickets }}</td>
+                                                <td>{{ stats.points }}</td>
+                                                <td>{{ stats.avgComplexity }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback qualitatif -->
+            {% if profile.qualitativeFeedback is not empty %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-heart"></i> Positive Feedback</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for feedback in profile.qualitativeFeedback %}
+                            <div class="border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ feedback.issue }}</strong>
+                                    <small class="text-muted">{{ feedback.date|date('Y-m-d') }}</small>
+                                </div>
+                                <p class="mb-1 mt-2">{{ feedback.comment }}</p>
+                                <small class="text-muted">— {{ feedback.author }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .progress-circle {
+            position: relative;
+            border-radius: 50%;
+            background: conic-gradient(#007bff 0deg, #007bff calc(var(--percentage, 0) * 3.6deg), #e9ecef calc(var(--percentage, 0) * 3.6deg));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .progress-circle-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .progress-circle-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mettre à jour les cercles de progression
+            document.querySelectorAll('.progress-circle').forEach(circle => {
+                const value = circle.querySelector('.progress-circle-value').textContent;
+                const percentage = parseFloat(value);
+                circle.style.setProperty('--percentage', percentage);
+            });
+        });
+    </script>
+{% endblock %} 

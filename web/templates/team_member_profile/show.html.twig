@@ -20,6 +20,11 @@
                             <i class="fas fa-sync"></i> Generate Profile
                         </button>
                     </form>
+                    <form action="{{ path('app_team_profile_reset', {'id': teamMember.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to reset this profile? This action cannot be undone.');">
+                        <button type="submit" class="btn btn-danger me-2">
+                            <i class="fas fa-trash"></i> Reset Profile
+                        </button>
+                    </form>
                                     <a href="{{ path('app_team_profile_export', {'id': teamMember.id}) }}" class="btn btn-success me-2">
                     <i class="fas fa-download"></i> Export JSON
                 </a>

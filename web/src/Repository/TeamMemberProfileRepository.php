@@ -21,6 +21,11 @@ class TeamMemberProfileRepository extends ServiceEntityRepository
         return $this->findOneBy(['teamMember' => $teamMemberId]);
     }
 
+    public function findAllByTeamMember(int $teamMemberId): array
+    {
+        return $this->findBy(['teamMember' => $teamMemberId]);
+    }
+
     public function findLatestByTeamMember(int $teamMemberId): ?TeamMemberProfile
     {
         return $this->createQueryBuilder('p')
@@ -35,6 +40,15 @@ class TeamMemberProfileRepository extends ServiceEntityRepository
     public function save(TeamMemberProfile $profile, bool $flush = false): void
     {
         $this->getEntityManager()->persist($profile);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(TeamMemberProfile $profile, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($profile);
 
         if ($flush) {
             $this->getEntityManager()->flush();

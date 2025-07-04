@@ -12,6 +12,11 @@
                         <i class="fas fa-sync"></i> Generate All Profiles
                     </button>
                 </form>
+                <form action="{{ path('app_team_profiles_reset_all') }}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to reset all profiles? This action cannot be undone.');">
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="fas fa-trash"></i> Reset All Profiles
+                    </button>
+                </form>
                 <a href="{{ path('app_team') }}" class="btn btn-secondary">
                     <i class="fas fa-users"></i> Manage Team
                 </a>

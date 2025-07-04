@@ -154,18 +154,18 @@ class TeamMemberProfileController extends AbstractController
         }
 
         if (!$teamMember->getJiraId()) {
-            throw $this->createNotFoundException('No Jira ID configured');
+            throw $this->createNotFoundException('Team member has no Jira ID configured');
         }
 
-        // Récupérer les données Jira
+        // Récupérer les données Jira pour debug
         $periodStart = new \DateTimeImmutable('-12 months');
         $periodEnd = new \DateTimeImmutable();
-        
         $jiraData = $this->analyticsService->fetchJiraData($teamMember->getJiraId(), $periodStart, $periodEnd);
-        
+
         // Analyser les statuts
         $statusCounts = [];
         $issueTypes = [];
+        $totalValidated = 0;
         $validatedStatuses = [
             'Done', 'Validé', 'Closed', 'Terminé', 'Resolved', 'Completed',
             'Fermé', 'Validated', 'Approved', 'Accepté', 'Accepté en recette'
@@ -173,24 +173,34 @@ class TeamMemberProfileController extends AbstractController
 
         foreach ($jiraData as $issue) {
             $status = $issue['fields']['status']['name'];
-            $issueType = $issue['fields']['issuetype']['name'];
-            
             $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
+            
+            $issueType = $issue['fields']['issuetype']['name'];
             $issueTypes[$issueType] = ($issueTypes[$issueType] ?? 0) + 1;
-        }
-
-        // Compter les tickets validés
-        $totalValidated = 0;
-        foreach ($jiraData as $issue) {
-            $status = $issue['fields']['status']['name'];
+            
             if (in_array($status, $validatedStatuses)) {
                 $totalValidated++;
             }
         }
 
-        // Calculer la distribution des sprints
-        $productivity = $this->analyticsService->calculateProductivityStats($jiraData);
-        $sprintDistribution = $productivity['sprintDistribution'] ?? [];
+        // Analyser la distribution par sprint
+        $sprintDistribution = [];
+        foreach ($jiraData as $issue) {
+            if (isset($issue['fields']['sprint']) && $issue['fields']['sprint']) {
+                $sprintField = $issue['fields']['sprint'];
+                if (is_array($sprintField)) {
+                    foreach ($sprintField as $sprint) {
+                        $sprintName = is_array($sprint) && isset($sprint['name']) ? $sprint['name'] : (string)$sprint;
+                        $sprintDistribution[$sprintName] = ($sprintDistribution[$sprintName] ?? 0) + 1;
+                    }
+                } else {
+                    $sprintName = is_array($sprintField) && isset($sprintField['name']) ? $sprintField['name'] : (string)$sprintField;
+                    if (!empty($sprintName)) {
+                        $sprintDistribution[$sprintName] = ($sprintDistribution[$sprintName] ?? 0) + 1;
+                    }
+                }
+            }
+        }
 
         return $this->render('team_member_profile/debug.html.twig', [
             'teamMember' => $teamMember,
@@ -202,5 +212,37 @@ class TeamMemberProfileController extends AbstractController
             'validationRate' => count($jiraData) > 0 ? round(($totalValidated / count($jiraData)) * 100, 1) : 0,
             'sprintDistribution' => $sprintDistribution
         ]);
+    }
+
+    #[Route('/team/profiles/reset-all', name: 'app_team_profiles_reset_all', methods: ['POST'])]
+    public function resetAllProfiles(): Response
+    {
+        try {
+            $resetCount = $this->analyticsService->resetAllProfiles();
+            $this->addFlash('success', "Successfully reset {$resetCount} profiles for all team members");
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Error resetting profiles: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_team_profiles');
+    }
+
+    #[Route('/team/profile/{id}/reset', name: 'app_team_profile_reset', methods: ['POST'])]
+    public function resetMemberProfile(int $id): Response
+    {
+        $teamMember = $this->teamMemberRepository->find($id);
+        
+        if (!$teamMember) {
+            throw $this->createNotFoundException('Team member not found');
+        }
+
+        try {
+            $resetCount = $this->analyticsService->resetMemberProfile($id);
+            $this->addFlash('success', "Successfully reset {$resetCount} profiles for {$teamMember->getName()}");
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Error resetting profile: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_team_profile_show', ['id' => $id]);
     }
 } 

@@ -6,6 +6,7 @@ use App\Entity\TeamMember;
 use App\Entity\TeamMemberProfile;
 use App\Repository\TeamMemberProfileRepository;
 use App\Repository\TeamMemberRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Psr\Log\LoggerInterface;
 
@@ -18,6 +19,7 @@ class TeamMemberAnalyticsService
         private readonly HttpClientInterface $jiraClient,
         private readonly TeamMemberRepository $teamMemberRepository,
         private readonly TeamMemberProfileRepository $profileRepository,
+        private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
         private readonly string $jiraBoardId,
     ) {
@@ -632,6 +634,8 @@ class TeamMemberAnalyticsService
         $sprintStats = [];
         $totalTickets = 0;
         $totalPoints = 0;
+        $bugTasks = 0;
+        $typeDistribution = [];
 
         foreach ($sprints as $sprint) {
             $sprintId = $sprint['id'];
@@ -639,9 +643,20 @@ class TeamMemberAnalyticsService
             $issues = $this->fetchSprintIssuesForMember($sprintId, $jiraId);
             $tickets = count($issues);
             $points = 0;
+            
             foreach ($issues as $issue) {
                 $points += $this->getStoryPoints($issue);
+                
+                // Compter les types de tickets
+                $issueType = $issue['fields']['issuetype']['name'];
+                $typeDistribution[$issueType] = ($typeDistribution[$issueType] ?? 0) + 1;
+                
+                // Compter les bug tasks
+                if ($issueType === 'Bug') {
+                    $bugTasks++;
+                }
             }
+            
             $sprintStats[$sprintName] = [
                 'tickets' => $tickets,
                 'points' => $points
@@ -660,8 +675,51 @@ class TeamMemberAnalyticsService
             'avgTicketsPerSprint' => $avgTicketsPerSprint,
             'avgPointsPerSprint' => $avgPointsPerSprint,
             'totalTickets' => $totalTickets,
-            'totalPoints' => $totalPoints
+            'totalPoints' => $totalPoints,
+            'bugTasks' => $bugTasks,
+            'typeDistribution' => $typeDistribution
         ];
+    }
+
+    /**
+     * Reset les données de profil pour tous les membres de l'équipe
+     */
+    public function resetAllProfiles(): int
+    {
+        $teamMembers = $this->teamMemberRepository->findAll();
+        $resetCount = 0;
+
+        foreach ($teamMembers as $teamMember) {
+            $profiles = $this->profileRepository->findAllByTeamMember($teamMember->getId());
+            foreach ($profiles as $profile) {
+                $this->profileRepository->remove($profile);
+                $resetCount++;
+            }
+        }
+
+        $this->entityManager->flush();
+        $this->logger->info("Reset {$resetCount} profiles for all team members");
+        
+        return $resetCount;
+    }
+
+    /**
+     * Reset les données de profil pour un membre spécifique
+     */
+    public function resetMemberProfile(int $memberId): int
+    {
+        $profiles = $this->profileRepository->findAllByTeamMember($memberId);
+        $resetCount = 0;
+
+        foreach ($profiles as $profile) {
+            $this->profileRepository->remove($profile);
+            $resetCount++;
+        }
+
+        $this->entityManager->flush();
+        $this->logger->info("Reset {$resetCount} profiles for team member ID {$memberId}");
+        
+        return $resetCount;
     }
 
     /**

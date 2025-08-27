@@ -41,6 +41,7 @@ help:
 # Commandes Docker Compose
 up:
 	docker-compose up -d
+	@echo "\n\033[0;32m🚀 Site accessible à l'adresse : https://localhost:8443\033[0m\n"
 
 down:
 	docker-compose down

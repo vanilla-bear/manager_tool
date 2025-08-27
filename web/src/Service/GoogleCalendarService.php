@@ -22,11 +22,12 @@ use Symfony\Component\Yaml\Yaml;
   public function fetchAndStoreEvents()
   {
     $client = new Client();
-    $client->setAuthConfig(__DIR__ . '/../../config/google/credentials2.json');
-    $client->addScope(Calendar::CALENDAR_READONLY);
+    
+    // Use service account credentials for server-to-server authentication
+    $client->setAuthConfig(__DIR__ . '/../../config/google/service-account-key.json');
+    $client->setScopes([Calendar::CALENDAR_READONLY]);
 
     $calendarService = new Calendar($client);
-//    $calendarId = 'romain.dalverny@studi.fr'; // Or your custom calendar ID
 
     $calendarId = 'c_6f246edceaaab673424c19d81d4c87fc41a298894fbc445562a8ea431a560068@group.calendar.google.com';
 
@@ -43,25 +44,26 @@ use Symfony\Component\Yaml\Yaml;
       'orderBy' => 'startTime'
     ];
 
-//    $events = $calendarService->calendarList->listCalendarList();
+    try {
+      $events = $calendarService->events->listEvents($calendarId, $params);
 
-    $events = $calendarService->events->listEvents($calendarId, $params);
+      foreach ($events->getItems() as $event) {
+        $calendarEvent = new GoogleCalendarEvent();
+        $calendarEvent->setEventId($event->getId());
+        $calendarEvent->setTitle($event->getSummary());
+        $calendarEvent->setStartTime(new \DateTime($event->getStart()->getDateTime() ?: $event->getStart()->getDate()));
+        $calendarEvent->setEndTime(new \DateTime($event->getEnd()->getDateTime() ?: $event->getEnd()->getDate()));
+        $calendarEvent->setDescription($event->getDescription());
 
-//    dump($events,$events->getItems());
-//    dd($events2,$events2->getItems());
+        $this->entityManager->persist($calendarEvent);
+      }
 
-    foreach ($events->getItems() as $event) {
-      $calendarEvent = new GoogleCalendarEvent();
-      $calendarEvent->setEventId($event->getId());
-      $calendarEvent->setTitle($event->getSummary());
-      $calendarEvent->setStartTime(new \DateTime($event->getStart()->getDateTime() ?: $event->getStart()->getDate()));
-      $calendarEvent->setEndTime(new \DateTime($event->getEnd()->getDateTime() ?: $event->getEnd()->getDate()));
-      $calendarEvent->setDescription($event->getDescription());
-
-      $this->entityManager->persist($calendarEvent);
+      $this->entityManager->flush();
+    } catch (\Exception $e) {
+      // Log the error for debugging
+      error_log('Google Calendar API Error: ' . $e->getMessage());
+      throw $e;
     }
-
-    $this->entityManager->flush();
   }
 
   public function getDates(): array

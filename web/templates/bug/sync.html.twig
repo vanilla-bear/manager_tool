@@ -25,6 +25,7 @@
                                        class="form-control" 
                                        id="start_date" 
                                        name="start_date" 
+                                       value="{{ lastStartDate }}"
                                        required>
                             </div>
                         </div>
@@ -35,10 +36,21 @@
                                        class="form-control" 
                                        id="end_date" 
                                        name="end_date" 
+                                       value="{{ lastEndDate }}"
                                        required>
                             </div>
                         </div>
                     </div>
+
+                    {% if lastStartDate and lastEndDate %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-memory"></i>
+                        <strong>Dates mémorisées :</strong> Les dernières dates utilisées ont été restaurées automatiquement.
+                        <br><small class="mt-2 d-block">
+                            <i class="fas fa-calendar"></i> <strong>Dernière synchronisation :</strong> du {{ lastStartDate }} au {{ lastEndDate }}
+                        </small>
+                    </div>
+                    {% endif %}
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
@@ -184,13 +196,19 @@
     {{ parent() }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Set default date range to last 3 months
-            const today = new Date();
-            const threeMonthsAgo = new Date();
-            threeMonthsAgo.setMonth(today.getMonth() - 3);
-
-            document.getElementById('start_date').value = threeMonthsAgo.toISOString().split('T')[0];
-            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            // Utiliser les dates mémorisées si disponibles, sinon utiliser les valeurs par défaut
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+            
+            // Si les champs sont vides (pas de dates mémorisées), utiliser les valeurs par défaut
+            if (!startDateInput.value) {
+                const today = new Date();
+                const threeMonthsAgo = new Date();
+                threeMonthsAgo.setMonth(today.getMonth() - 3);
+                
+                startDateInput.value = threeMonthsAgo.toISOString().split('T')[0];
+                endDateInput.value = today.toISOString().split('T')[0];
+            }
 
             // Handle form submission
             const form = document.getElementById('syncForm');

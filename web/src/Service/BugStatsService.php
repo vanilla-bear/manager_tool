@@ -47,13 +47,18 @@ class BugStatsService
         $boardInfo = $this->getBoardProject();
         
         $jql = $this->buildBugsJQL($boardInfo['projectKey'], $startDate, $endDate);
-        return $this->countIssues($jql);
+        error_log('BugStatsService: JQL Query for bugs: ' . $jql);
+        
+        $count = $this->countIssues($jql);
+        error_log('BugStatsService: Bugs count result: ' . $count);
+        
+        return $count;
     }
 
     public function buildBugsJQL(string $projectKey, \DateTimeInterface $startDate, \DateTimeInterface $endDate): string
     {
         return sprintf(
-            'project = "%s" AND issuetype = Bug AND created >= "%s" AND created <= "%s" ORDER BY created DESC',
+            'project = "%s" AND issuetype = "Bug" AND created >= "%s" AND created <= "%s" ORDER BY created DESC',
             $projectKey,
             $startDate->format('Y-m-d'),
             $endDate->format('Y-m-d')
@@ -81,7 +86,11 @@ class BugStatsService
             $endDate->format('Y-m-d')
         );
 
-        return $this->countIssues($jql);
+        error_log('BugStatsService: JQL Query for delivered tickets: ' . $jql);
+        $count = $this->countIssues($jql);
+        error_log('BugStatsService: Delivered tickets count result: ' . $count);
+        
+        return $count;
     }
 
     private function getBoardProject(): array
@@ -101,18 +110,45 @@ class BugStatsService
 
     private function countIssues(string $jql): int
     {
-        try {
-            $response = $this->jiraClient->request('GET', '/rest/api/2/search', [
-                'query' => [
-                    'jql' => $jql,
-                    'maxResults' => 0 // On ne veut que le total
-                ]
-            ]);
+        // Utiliser l'API v3 enhanced search avec pagination
+        $total = 0;
+        $nextPageToken = null;
+        $maxResults = 100;
+        $pageSafeguard = 0;
+        $pageLimit = 200; // garde-fou (20k issues max)
 
-            $data = $response->toArray();
-            return $data['total'];
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Error executing JQL query: ' . $jql . ' - ' . $e->getMessage());
+        try {
+            do {
+                $query = [
+                    'jql'        => $jql,
+                    'maxResults' => $maxResults,
+                    'fields'     => 'key',
+                ];
+                if ($nextPageToken) {
+                    $query['nextPageToken'] = $nextPageToken;
+                }
+
+                $response = $this->jiraClient->request('GET', '/rest/api/3/search/jql', [
+                    'query' => $query
+                ]);
+                $data = $response->toArray(false);
+
+                $issues = $data['issues'] ?? [];
+                $total += count($issues);
+                $nextPageToken = $data['nextPageToken'] ?? null;
+
+                $pageSafeguard++;
+            } while ($nextPageToken !== null && $pageSafeguard < $pageLimit);
+
+            if ($pageSafeguard >= $pageLimit) {
+                error_log('WARN: Pagination interrompue (limite de sécurité atteinte).');
+            }
+
+            return $total;
+        } catch (\Throwable $e) {
+            error_log('Erreur lors du comptage des issues: ' . $e->getMessage());
+            return 0;
         }
     }
+    
 } 

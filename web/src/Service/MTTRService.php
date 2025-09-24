@@ -19,15 +19,15 @@ class MTTRService
     public function getMTTRData(DateTime $startDate, DateTime $endDate): array
     {
         $jql = sprintf(
-            'project = MD AND issuetype IN (Bug, Incident) AND created >= "%s" AND created <= "%s" AND status = Done ORDER BY created ASC',
+            'project = "MD" AND issuetype IN ("Bug", "Incident") AND created >= "%s" AND created <= "%s" AND status = "Done" ORDER BY created ASC',
             $startDate->format('Y-m-d'),
             $endDate->format('Y-m-d')
         );
 
-        $response = $this->jiraClient->request('GET', "/rest/api/2/search", [
+        $response = $this->jiraClient->request('GET', "/rest/api/3/search", [
             'query' => [
                 'jql' => $jql,
-                'maxResults' => self::MAX_RESULTS_PER_PAGE,
+                'maxResults' => 100,
                 'fields' => 'key,summary,created,resolutiondate,status,issuetype'
             ]
         ]);

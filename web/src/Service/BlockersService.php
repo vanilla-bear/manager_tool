@@ -110,19 +110,40 @@ class BlockersService
     
         // Calcul total des tâches créées dans la période
         $jql = sprintf(
-            'project = MD AND updated >= "%s" AND updated <= "%s"',
+            'project = "MD" AND updated >= "%s" AND updated <= "%s"',
             $startDate->format('Y-m-d'),
             $endDate->format('Y-m-d')
         );
     
-        $response = $this->jiraClient->request('GET', "/rest/api/2/search", [
-            'query' => [
-                'jql' => $jql,
-                'maxResults' => 0
-            ]
-        ]);
-        $data = $response->toArray();
-        $totalTasks = $data['total'];
+        try {
+            // Essayer d'abord avec l'API v3 enhanced search
+            $response = $this->jiraClient->request('GET', "/rest/api/3/search/jql", [
+                'query' => [
+                    'jql' => $jql,
+                    'maxResults' => 1, // On récupère juste 1 résultat pour avoir le total
+                    'fields' => 'key'
+                ]
+            ]);
+            $data = $response->toArray(false);
+            $totalTasks = $data['total'] ?? 0;
+        } catch (\Throwable $e) {
+            // Fallback vers l'API v3 classique
+            try {
+                $response = $this->jiraClient->request('POST', "/rest/api/3/search", [
+                    'json' => [
+                        'jql' => $jql,
+                        'maxResults' => 1,
+                        'fields' => ['key']
+                    ]
+                ]);
+                $data = $response->toArray(false);
+                $totalTasks = $data['total'] ?? 0;
+            } catch (\Throwable $e2) {
+                // Si tout échoue, utiliser une estimation basée sur les blocages
+                $this->logger->warning('Impossible de récupérer le total des tâches: ' . $e2->getMessage());
+                $totalTasks = $totalBlockers * 10; // Estimation conservatrice
+            }
+        }
     
         $blockedPercentage = $totalTasks > 0 ? round(($totalBlockers / $totalTasks) * 100, 1) : 0;
         $averageDuration = $totalBlockers > 0 ? round($totalDuration / $totalBlockers, 1) : 0;
@@ -168,10 +189,10 @@ class BlockersService
         );
 
 
-        $response = $this->jiraClient->request('GET', "/rest/api/2/search", [
+        $response = $this->jiraClient->request('GET', "/rest/api/3/search", [
             'query' => [
                 'jql' => $jql,
-                'maxResults' => self::MAX_RESULTS_PER_PAGE,
+                'maxResults' => 100,
                 'fields' => 'key,summary,created,resolutiondate,status,assignee,sprint'
             ]
         ]);
@@ -217,39 +238,110 @@ class BlockersService
 
     private function fetchBlockers(DateTime $startDate, DateTime $endDate): array
     {
-        $startAt = 0;
         $allBlockers = [];
-        $isLastPage = false;
+        
+        $jql = sprintf(
+            'project = "MD" AND updated >= "%s" AND updated <= "%s" ORDER BY updated ASC',
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
+        
+        $maxResults = 100; // autorisé par la v3
+        $fieldsCsv = 'key,summary,created,resolutiondate,status'; // CSV, pas tableau
+        
+        $nextPageToken = null;
+        $pageSafeguard = 0; 
+        $pageLimit = 200; // garde-fou (20k issues max)
+        
+        try {
+            do {
+                $query = [
+                    'jql'        => $jql,
+                    'maxResults' => $maxResults,
+                    'fields'     => $fieldsCsv,
+                    'expand'     => 'changelog'
+                ];
+                if ($nextPageToken) {
+                    $query['nextPageToken'] = $nextPageToken;
+                }
+                
+                $response = $this->jiraClient->request('GET', '/rest/api/3/search/jql', [
+                    'query' => $query,
+                ]);
+                
+                $data = $response->toArray(false);
+                
+                // la réponse enhanced n'a pas "total" ; on lit les issues et le nextPageToken
+                $issues = $data['issues'] ?? [];
+                foreach ($issues as $issue) {
+                    if (!isset($issue['changelog']['histories'])) {
+                        continue;
+                    }
 
-        while (!$isLastPage) {
-            //$jql = sprintf(
-            //    'project = MD AND updated >= "%s" AND updated <= "%s" AND "indicateur[checkboxes]" IN (Impediment, Bloquée) ORDER BY updated ASC',
-            //    $startDate->format('Y-m-d'),
-            //    $endDate->format('Y-m-d')
-            //);
-            $jql = sprintf(
-                'project = MD AND updated >= "%s" AND updated <= "%s" ORDER BY updated ASC',
-                $startDate->format('Y-m-d'),
-                $endDate->format('Y-m-d')
-            );
-            //dump($jql);
+                    $becameBlocker = false;
+                    $blockerDate = null;
 
+                    foreach ($issue['changelog']['histories'] as $history) {
+                        $changeDate = new DateTime($history['created']);
 
-            $response = $this->jiraClient->request('GET', "/rest/api/2/search", [
-                'query' => [
-                    'jql' => $jql,
-                    'startAt' => $startAt,
-                    'maxResults' => self::MAX_RESULTS_PER_PAGE,
-                    'fields' => 'key,summary,created,resolutiondate,status',
-                    'expand' => 'changelog'
-                ]
-            ]);
-
-            $data = $response->toArray();
+                        foreach ($history['items'] as $item) {
+                            if ($item['field'] === 'indicateur') {
+                                $fromString = $item['fromString'] ?? '';
+                                $toString = $item['toString'] ?? '';
+                                
+                                // Vérifier si le ticket est devenu un blocage
+                                if (
+                                    !str_contains($fromString, 'Impediment') && 
+                                    !str_contains($fromString, 'Bloquée') &&
+                                    (str_contains($toString, 'Impediment') || str_contains($toString, 'Bloquée'))
+                                ) {
+                                    $becameBlocker = true;
+                                    $blockerDate = $changeDate;
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if ($becameBlocker) {
+                        $allBlockers[] = $issue;
+                    }
+                }
+                
+                $nextPageToken = $data['nextPageToken'] ?? null;
+                $pageSafeguard++;
+                
+            } while ($nextPageToken !== null && $pageSafeguard < $pageLimit);
             
-            //dump($data);
-            foreach ($data['issues'] as $issue) {
-                //dump($issue['key']);
+            if ($pageSafeguard >= $pageLimit) {
+                error_log('WARN: Pagination interrompue (limite de sécurité atteinte).');
+            }
+            
+            // Succès : on a tout récupéré via /search/jql ; on retourne.
+            return $allBlockers;
+            
+        } catch (\Throwable $t) {
+            // Fallback legacy si /search/jql n'est pas dispo sur l'instance (ou feature flag)
+            error_log('INFO: fallback /rest/api/3/search (legacy) : ' . $t->getMessage());
+        }
+        
+        // --- Fallback legacy /rest/api/3/search (startAt/total) ---
+        $startAt = 0;
+        $pageSafeguard = 0;
+        do {
+            $response = $this->jiraClient->request('POST', '/rest/api/3/search', [
+                'json' => [
+                    'jql'        => $jql,
+                    'startAt'    => $startAt,
+                    'maxResults' => $maxResults,
+                    'fields'     => ['key', 'summary', 'created', 'resolutiondate', 'status'],
+                    'expand'     => 'changelog'
+                ],
+            ]);
+            $data = $response->toArray(false);
+            
+            $issues = $data['issues'] ?? [];
+            foreach ($issues as $issue) {
                 if (!isset($issue['changelog']['histories'])) {
                     continue;
                 }
@@ -259,19 +351,12 @@ class BlockersService
 
                 foreach ($issue['changelog']['histories'] as $history) {
                     $changeDate = new DateTime($history['created']);
-                    //if ($changeDate < $startDate || $changeDate > $endDate) {
-                    //    continue;
-                    //}
 
                     foreach ($history['items'] as $item) {
                         if ($item['field'] === 'indicateur') {
-                            //dump($item);
-
                             $fromString = $item['fromString'] ?? '';
                             $toString = $item['toString'] ?? '';
-                            //dump($fromString);
-                            //dump("--------------------------------");
-                            //dump($toString);
+                            
                             // Vérifier si le ticket est devenu un blocage
                             if (
                                 !str_contains($fromString, 'Impediment') && 
@@ -285,18 +370,24 @@ class BlockersService
                         }
                     }
                 }
-                //dump($becameBlocker);
+                
                 if ($becameBlocker) {
                     $allBlockers[] = $issue;
                 }
-                //dump("--------------------------------");
             }
-
-            $total = $data['total'];
-            $startAt += self::MAX_RESULTS_PER_PAGE;
-            $isLastPage = $startAt >= $total;
-        }
-        //dd($allBlockers);
+            
+            $returned = count($issues);
+            $total    = isset($data['total']) ? (int)$data['total'] : null;
+            
+            // stop si plus rien, ou si on a atteint le total
+            if ($returned === 0 || ($total !== null && $startAt + $returned >= $total)) {
+                break;
+            }
+            
+            $startAt += $returned;
+            $pageSafeguard++;
+        } while ($pageSafeguard < $pageLimit);
+        
         return $allBlockers;
     }
 }

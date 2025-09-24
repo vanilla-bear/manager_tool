@@ -219,21 +219,108 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var clipboard = new ClipboardJS('.copy-btn');
+            // Modern clipboard API function
+            async function copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    } catch (err) {
+                        console.error('Modern clipboard API failed:', err);
+                        return false;
+                    }
+                }
+                return false;
+            }
             
-            clipboard.on('success', function(e) {
-                var button = e.trigger;
+            // Fallback function for copying text (for older browsers)
+            function fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    var successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return successful;
+                } catch (err) {
+                    console.error('Fallback: Could not copy text: ', err);
+                    document.body.removeChild(textArea);
+                    return false;
+                }
+            }
+            
+            // Handle copy button clicks
+            function handleCopyClick(button) {
+                var text = button.getAttribute('data-clipboard-text');
                 var originalText = button.innerHTML;
+                
+                // Show loading state
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copying...';
+                button.disabled = true;
+                
+                // Try modern API first, then fallback
+                copyToClipboard(text).then(function(success) {
+                    if (success) {
+                        showSuccess(button, originalText);
+                    } else {
+                        // Try fallback
+                        if (fallbackCopyTextToClipboard(text)) {
+                            showSuccess(button, originalText);
+                        } else {
+                            showError(button, originalText);
+                        }
+                    }
+                }).catch(function() {
+                    // Try fallback
+                    if (fallbackCopyTextToClipboard(text)) {
+                        showSuccess(button, originalText);
+                    } else {
+                        showError(button, originalText);
+                    }
+                });
+            }
+            
+            function showSuccess(button, originalText) {
                 button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                    button.disabled = false;
                 }, 2000);
+            }
+            
+            function showError(button, originalText) {
+                button.innerHTML = '<i class="fas fa-times"></i> Failed';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-danger');
                 
-                e.clearSelection();
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-danger');
+                    button.classList.add('btn-outline-primary');
+                    button.disabled = false;
+                }, 2000);
+            }
+            
+            // Add click listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleCopyClick(this);
+                });
             });
         });
     </script>

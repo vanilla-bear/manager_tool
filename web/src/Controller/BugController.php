@@ -46,6 +46,10 @@ class BugController extends AbstractController
             $startDate = new \DateTime($request->request->get('start_date'));
             $endDate = new \DateTime($request->request->get('end_date'));
             
+            // Sauvegarder les dates dans la session pour la prochaine fois
+            $request->getSession()->set('bug_sync_start_date', $startDate->format('Y-m-d'));
+            $request->getSession()->set('bug_sync_end_date', $endDate->format('Y-m-d'));
+            
             try {
                 $currentDate = clone $startDate;
                 $syncedMonths = 0;
@@ -64,6 +68,14 @@ class BugController extends AbstractController
             return $this->redirectToRoute('app_bugs_index');
         }
 
-        return $this->render('bug/sync.html.twig');
+        // Récupérer les dernières dates utilisées depuis la session
+        $session = $request->getSession();
+        $lastStartDate = $session->get('bug_sync_start_date');
+        $lastEndDate = $session->get('bug_sync_end_date');
+
+        return $this->render('bug/sync.html.twig', [
+            'lastStartDate' => $lastStartDate,
+            'lastEndDate' => $lastEndDate,
+        ]);
     }
 } 

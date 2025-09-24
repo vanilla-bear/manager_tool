@@ -85,3 +85,12 @@ services:
     arguments:
       $jiraClient: "@jira.client"
       $jiraBoardId: "%jira.board_id%"
+
+  App\Command\ListSprintsCommand:
+    arguments:
+      $jiraClient: "@jira.client"
+      $jiraBoardId: "%jira.board_id%"
+
+  App\Command\ListBoardsCommand:
+    arguments:
+      $jiraClient: "@jira.client"

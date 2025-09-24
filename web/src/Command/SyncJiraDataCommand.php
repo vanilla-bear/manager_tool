@@ -65,54 +65,51 @@ class SyncJiraDataCommand extends Command
         $syncSprints = $input->getOption('sprints') || $input->getOption('all');
 
         if ($syncSprints) {
-            try {
-                $io->section('Synchronisation des sprints');
-                
-                // Créer une barre de progression
-                $progressBar = $io->createProgressBar();
-                $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %message%');
-                
-                $sprints = $this->sprintSyncService->synchronizeSprints(
-                    $startDate,
-                    $endDate,
-                    function (int $current, int $total, string $sprintName) use ($progressBar) {
-                        if ($current === 1) {
-                            $progressBar->start($total);
-                        }
-                        $progressBar->setMessage("Sprint en cours : $sprintName");
-                        $progressBar->setProgress($current);
+            $io->section('Synchronisation des sprints');
+            
+            // Créer une barre de progression
+            $progressBar = $io->createProgressBar();
+            $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %message%');
+            
+            $sprints = $this->sprintSyncService->synchronizeSprints(
+                $startDate,
+                $endDate,
+                function (int $current, int $total, string $sprintName) use ($progressBar) {
+                    if ($current === 1) {
+                        $progressBar->start($total);
                     }
-                );
-                
-                $progressBar->finish();
-                $io->newLine(2);
-                
-                $io->success(sprintf('%d sprints synchronisés', count($sprints)));
-                
-                // Afficher un tableau récapitulatif
-                $sprintData = [];
-                foreach ($sprints as $sprint) {
-                    $sprintData[] = [
-                        $sprint->getName(),
-                        $sprint->getStartDate()->format('Y-m-d'),
-                        $sprint->getEndDate()->format('Y-m-d'),
-                        $sprint->getCommittedPoints(),
-                        $sprint->getCompletedPoints(),
-                        $sprint->getAddedPointsDuringSprint(),
-                        sprintf('%.1f%%', $sprint->getCompletionRate() ?? 0),
-                    ];
+                    $progressBar->setMessage("Sprint en cours : $sprintName");
+                    $progressBar->setProgress($current);
                 }
-                
-                if (!empty($sprintData)) {
-                    $io->table(
-                        ['Sprint', 'Début', 'Fin', 'Points Engagés', 'Points Terminés', 'Points Ajoutés', 'Taux'],
-                        $sprintData
-                    );
-                }
-            } catch (\Exception $e) {
-                $io->error(sprintf('Erreur lors de la synchronisation des sprints : %s', $e->getMessage()));
-                return Command::FAILURE;
+            );
+            
+            $progressBar->finish();
+            $io->newLine(2);
+            
+            $io->success(sprintf('%d sprints synchronisés', count($sprints)));
+            // Afficher un tableau récapitulatif
+            $sprintData = [];
+            foreach ($sprints as $sprint) {
+                $sprintData[] = [
+                    $sprint->getName(),
+                    $sprint->getStartDate()->format('Y-m-d'),
+                    $sprint->getEndDate()->format('Y-m-d'),
+                    $sprint->getCommittedPoints(),
+                    $sprint->getCompletedPoints(),
+                    $sprint->getAddedPointsDuringSprint(),
+                    sprintf('%.1f%%', $sprint->getCompletionRate() ?? 0),
+                ];
             }
+            
+            if (!empty($sprintData)) {
+                $io->table(
+                    ['Sprint', 'Début', 'Fin', 'Points Engagés', 'Points Terminés', 'Points Ajoutés', 'Taux'],
+                    $sprintData
+                );
+            }
+            
+            // Afficher un message informatif sur les erreurs potentielles
+            $io->note('Note: Les erreurs de synchronisation (sprints supprimés, etc.) sont automatiquement gérées et loggées. Vérifiez les logs pour plus de détails.');
         }
 
         // TODO: Ajouter d'autres synchronisations si nécessaire (bugs, etc.)

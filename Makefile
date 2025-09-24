@@ -32,6 +32,8 @@ help:
 	@echo "  make sync-last-month Synchroniser les données du dernier mois"
 	@echo "  make sync-last-3-months Synchroniser les données des 3 derniers mois"
 	@echo "  make sync-custom    Synchroniser les données pour une période personnalisée (FROM=YYYY-MM-DD TO=YYYY-MM-DD)"
+	@echo "  make list-sprints  Lister tous les sprints du tableau Jira"
+	@echo "  make list-boards  Lister tous les tableaux Jira disponibles"
 	@echo "  make reset-metrics  Réinitialiser les données"
 	@echo "  make reset-metrics-force Réinitialiser toutes les données des métriques (sans confirmation)"
 	@echo "  make reset-sprints Réinitialiser uniquement les données des sprints"
@@ -92,23 +94,23 @@ lint:
 
 # Synchroniser les données
 sync:
-	cd $(WEB_DIR) && php bin/console app:sync-jira --all
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
 
 # Synchroniser toutes les données depuis 6 mois
 sync-all:
-	cd $(WEB_DIR) && php bin/console app:sync-jira --all
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
 
 # Synchroniser uniquement les sprints depuis 6 mois
 sync-sprints:
-	cd $(WEB_DIR) && php bin/console app:sync-jira --sprints
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --sprints
 
 # Synchroniser les données du dernier mois
 sync-last-month:
-	cd $(WEB_DIR) && php bin/console app:sync-jira --all --from=$(shell date -d "1 month ago" +%Y-%m-%d)
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "1 month ago" +%Y-%m-%d)
 
 # Synchroniser les données des 3 derniers mois
 sync-last-3-months:
-	cd $(WEB_DIR) && php bin/console app:sync-jira --all --from=$(shell date -d "3 months ago" +%Y-%m-%d)
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "3 months ago" +%Y-%m-%d)
 
 # Synchroniser les données pour une période personnalisée
 sync-custom:
@@ -117,20 +119,28 @@ sync-custom:
 		echo "Usage: make sync-custom FROM=YYYY-MM-DD TO=YYYY-MM-DD"; \
 		exit 1; \
 	fi
-	cd $(WEB_DIR) && php bin/console app:sync-jira --all --from=$(FROM) --to=$(TO)
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(FROM) --to=$(TO)
+
+# Lister les sprints
+list-sprints:
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:list-sprints
+
+# Lister les tableaux
+list-boards:
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:list-boards
 
 # Réinitialiser les données
 reset-metrics: ## Réinitialise toutes les données des métriques (avec confirmation)
-	cd $(WEB_DIR) && php bin/console app:reset-metrics
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:reset-metrics
 
 reset-metrics-force: ## Réinitialise toutes les données des métriques (sans confirmation)
-	cd $(WEB_DIR) && php bin/console app:reset-metrics --force
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:reset-metrics --force
 
 reset-sprints: ## Réinitialise uniquement les données des sprints
-	cd $(WEB_DIR) && php bin/console app:reset-metrics --sprints
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:reset-metrics --sprints
 
 reset-bugs: ## Réinitialise uniquement les données des bugs
-	cd $(WEB_DIR) && php bin/console app:reset-metrics --bugs
+	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:reset-metrics --bugs
 
 # Commande pratique pour réinitialiser et resynchroniser
 reset-and-sync: reset-metrics-force sync-all ## Réinitialise toutes les données et resynchronise

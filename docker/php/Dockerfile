@@ -35,10 +35,11 @@ RUN groupadd -g $USER_GID localuser \
 # Met à jour les packages et ajoute les dépendances nécessaires
 RUN apt-get update && apt-get install -y apt-transport-https curl gnupg
 
-# Installer les extensions nécessaires, y compris pdo_mysql
+# Installer les extensions nécessaires, y compris pdo_mysql et dom
 RUN apt-get update && apt-get install -y \
     libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql calendar
+    libxml2-dev \
+    && docker-php-ext-install pdo pdo_mysql calendar dom
 
 # Définir le dossier de travail
 WORKDIR /app/web

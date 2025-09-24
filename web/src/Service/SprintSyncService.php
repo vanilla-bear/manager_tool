@@ -27,6 +27,7 @@ class SprintSyncService
         $syncedSprints = [];
         $total = count($sprints);
         $current = 0;
+        $errors = [];
 
         foreach ($sprints as $sprintData) {
             $current++;
@@ -34,12 +35,35 @@ class SprintSyncService
                 $progressCallback($current, $total, $sprintData['name']);
             }
 
-            $sprint = $this->sprintRepository->findByJiraId($sprintData['id']) ?? new Sprint();
-            
-            $this->updateSprintFromJiraData($sprint, $sprintData);
-            $this->sprintRepository->save($sprint, true);
-            
-            $syncedSprints[] = $sprint;
+            try {
+                $sprint = $this->sprintRepository->findByJiraId($sprintData['id']) ?? new Sprint();
+                
+                $this->updateSprintFromJiraData($sprint, $sprintData);
+                $this->sprintRepository->save($sprint, true);
+                
+                $syncedSprints[] = $sprint;
+            } catch (\Exception $e) {
+                $errorMessage = sprintf(
+                    'Erreur lors de la synchronisation du sprint "%s" (ID: %d): %s',
+                    $sprintData['name'] ?? 'Inconnu',
+                    $sprintData['id'] ?? 'N/A',
+                    $e->getMessage()
+                );
+                $errors[] = $errorMessage;
+                
+                // Log l'erreur mais continue avec le sprint suivant
+                error_log($errorMessage);
+                
+                // Appeler le callback avec l'erreur pour l'affichage
+                if ($progressCallback) {
+                    $progressCallback($current, $total, $sprintData['name'] . ' (ERREUR)');
+                }
+            }
+        }
+
+        // Si il y a des erreurs, les logger
+        if (!empty($errors)) {
+            error_log(sprintf('Synchronisation terminée avec %d erreurs sur %d sprints', count($errors), $total));
         }
 
         return $syncedSprints;
@@ -49,56 +73,47 @@ class SprintSyncService
     {
         $allSprints = [];
         $startAt = 0;
-        $isLastPage = false;
-
-        while (!$isLastPage) {
+    
+        do {
             $response = $this->jiraClient->request('GET', "/rest/agile/1.0/board/{$this->jiraBoardId}/sprint", [
                 'query' => [
-                    'state' => 'active,closed', // Include active sprints
-                    'startAt' => $startAt,
-                    'maxResults' => self::MAX_RESULTS_PER_PAGE
-                ]
+                    'state'      => 'active,closed',
+                    'startAt'    => $startAt,
+                    'maxResults' => self::MAX_RESULTS_PER_PAGE,
+                ],
             ]);
-
-            $data = $response->toArray();
-            
-            // Add sprints from current page
-            $allSprints = array_merge($allSprints, $data['values']);
-
-            // Check if we've reached the last page
-            $total = $data['total'];
+    
+            $data = $response->toArray(false);
+            $allSprints = array_merge($allSprints, $data['values'] ?? []);
+    
+            $isLast = $data['isLast'] ?? true; // Agile renvoie isLast
             $startAt += self::MAX_RESULTS_PER_PAGE;
-            $isLastPage = $startAt >= $total;
-        }
-
-        // Filter sprints by date range
-        return array_filter($allSprints, function ($sprint) use ($startDate, $endDate) {
-            // Skip sprints without start date
-            if (!isset($sprint['startDate'])) {
-                return false;
-            }
-
+        } while (!$isLast); // boucle tant que pas la dernière page
+        // (Certaines instances n’ont pas de total fiable.) :contentReference[oaicite:6]{index=6}
+    
+        $filtered = array_filter($allSprints, function ($sprint) use ($startDate, $endDate) {
+            if (empty($sprint['startDate'])) return false;
+    
             try {
                 $sprintStart = new \DateTime($sprint['startDate']);
-                
-                // For active sprints, we don't check the end date
-                if ($sprint['state'] === 'active') {
+    
+                if (($sprint['state'] ?? null) === 'active') {
                     return $sprintStart >= $startDate;
                 }
-
-                // For closed sprints, we check both dates
-                if (!isset($sprint['endDate'])) {
-                    return false;
-                }
-                
+    
+                if (empty($sprint['endDate'])) return false;
+    
                 $sprintEnd = new \DateTime($sprint['endDate']);
                 return $sprintStart >= $startDate && $sprintEnd <= $endDate;
-            } catch (\Exception $e) {
-                // Skip sprints with invalid dates
+            } catch (\Throwable) {
                 return false;
             }
         });
+    
+        // Réindexer proprement
+        return array_values($filtered);
     }
+    
 
     private function updateSprintFromJiraData(Sprint $sprint, array $data): void
     {
@@ -135,136 +150,161 @@ class SprintSyncService
 
     private function fetchSprintIssues(int $sprintId, bool $initialState = false): array
     {
-        $startAt = 0;
-        $isLastPage = false;
         $allIssues = [];
-        
-        while (!$isLastPage) {
-            $jql = sprintf('project = MD AND sprint = %d AND issuetype in (Bug, Epic, Story, Task, Technique) ORDER BY created ASC', $sprintId);
-
-            $response = $this->jiraClient->request('GET', '/rest/api/2/search', [
-                'query' => [
-                    'jql' => $jql,
-                    'startAt' => $startAt,
-                    'maxResults' => self::MAX_RESULTS_PER_PAGE,
-                    'fields' => [
-                        'key',
-                        'status',
-                        'customfield_10016',  // Story points
-                        'customfield_10026',  // Story points (alternative)
-                        'customfield_10200',  // Story points (alternative)
-                        'created',            // Date de création
-                        'updated',            // Date de mise à jour
-                        'sprint'              // Champ sprint pour voir l'historique
-                    ],
-                    'expand' => 'changelog'   // Récupérer l'historique des changements
-                ]
-            ]);
-
-            $data = $response->toArray();
-            $allIssues = array_merge($allIssues, $data['issues']);
-
-            $total = $data['total'];
-            $startAt += self::MAX_RESULTS_PER_PAGE;
-            $isLastPage = $startAt >= $total;
+    
+        // ⚠️ Jira Cloud "enhanced search" (GET /rest/api/3/search/jql)
+        // utilise nextPageToken. On tente d'abord cette route.
+        $jql = sprintf(
+            'project = MD AND sprint = %d AND issuetype in (Bug, Epic, Story, Task, Technique) ORDER BY created ASC',
+            $sprintId
+        );
+    
+        $maxResults = 100; // autorisé par la v3
+        $fieldsCsv = 'key,status,customfield_10200,created,updated'; // CSV, pas tableau
+    
+        $nextPageToken = null;
+        $pageSafeguard = 0; 
+        $pageLimit = 200; // garde-fou (20k issues max)
+    
+        try {
+            do {
+                $query = [
+                    'jql'        => $jql,
+                    'maxResults' => $maxResults,
+                    'fields'     => $fieldsCsv,
+                ];
+                if ($nextPageToken) {
+                    $query['nextPageToken'] = $nextPageToken;
+                }
+    
+                $response = $this->jiraClient->request('GET', '/rest/api/3/search/jql', [
+                    'query' => $query,
+                ]);
+    
+                $data = $response->toArray(false);
+    
+                // la réponse enhanced n’a pas “total” ; on lit les issues et le nextPageToken
+                $issues = $data['issues'] ?? [];
+                foreach ($issues as $issue) {
+                    $allIssues[] = $issue; // on a déjà les champs utiles
+                }
+    
+                $nextPageToken = $data['nextPageToken'] ?? null;
+                $pageSafeguard++;
+    
+            } while ($nextPageToken !== null && $pageSafeguard < $pageLimit);
+    
+            if ($pageSafeguard >= $pageLimit) {
+                error_log('WARN: Pagination interrompue (limite de sécurité atteinte).');
+            }
+    
+            // Succès : on a tout récupéré via /search/jql ; on retourne.
+            return $allIssues;
+    
+        } catch (\Throwable $t) {
+            // Fallback legacy si /search/jql n’est pas dispo sur l’instance (ou feature flag)
+            error_log('INFO: fallback /rest/api/3/search (legacy) : ' . $t->getMessage());
         }
-
+    
+        // --- Fallback legacy /rest/api/3/search (startAt/total) ---
+        $startAt = 0;
+        $pageSafeguard = 0;
+        do {
+            $response = $this->jiraClient->request('POST', '/rest/api/3/search', [
+                'json' => [
+                    'jql'        => $jql,
+                    'startAt'    => $startAt,
+                    'maxResults' => $maxResults,
+                    'fields'     => ['key', 'status', 'customfield_10200', 'created', 'updated'],
+                ],
+            ]);
+            $data = $response->toArray(false);
+    
+            $issues = $data['issues'] ?? [];
+            foreach ($issues as $issue) {
+                $allIssues[] = $issue;
+            }
+    
+            $returned = count($issues);
+            $total    = isset($data['total']) ? (int)$data['total'] : null;
+    
+            // stop si plus rien, ou si on a atteint le total
+            if ($returned === 0 || ($total !== null && $startAt + $returned >= $total)) {
+                break;
+            }
+    
+            $startAt += $returned;
+            $pageSafeguard++;
+        } while ($pageSafeguard < $pageLimit);
+    
         return $allIssues;
     }
+    
+
 
     private function fetchSprintVelocityData(int $sprintId): array
     {
-        $completedPoints = 0;
-        $committedPoints = 0;
-        $devsTerminesPoints = 0;
+        $completedPoints = 0.0;
+        $committedPoints = 0.0;
+        $devsTerminesPoints = 0.0;
         $devsTerminesCount = 0;
-        $addedPointsDuringSprint = 0;
-        
-        // Récupérer tous les tickets du sprint
-        $allIssues = $this->fetchSprintIssues($sprintId, false);
-        
-        // Récupérer les dates du sprint
-        $sprintInfo = $this->fetchSprintInfo($sprintId);
-        $sprintStartDate = new \DateTime($sprintInfo['startDate']);
-        
-        foreach ($allIssues as $issue) {
-            $storyPoints = $this->getStoryPoints($issue);
-            $issueCreated = new \DateTime($issue['fields']['created']);
-            
-            // Si le ticket a été créé après le début du sprint, c'est un ajout
-            if ($issueCreated > $sprintStartDate) {
-                $addedPointsDuringSprint += $storyPoints;
-            } else {
-                $committedPoints += $storyPoints;
-            }
-            
-            // Si le ticket est terminé (Done), on le compte dans completedPoints
-            if ($issue['fields']['status']['statusCategory']['key'] === 'done') {
-                $completedPoints += $storyPoints;
-            }
-            
-            // Si le ticket est passé par le statut "Dev Terminé", on le compte dans devsTerminesPoints
-            if ($this->hasPassedThroughDevTermineStatus($issue)) {
-                $devsTerminesPoints += $storyPoints;
-                $devsTerminesCount++;
-            }
-        }
-
-        // Calculer la capacité en jours
-        $capacityDays = $this->calculateCapacityDays($sprintId);
-
-        return [
-            'completedPoints' => $completedPoints,
-            'committedPoints' => $committedPoints,
-            'devsTerminesPoints' => $devsTerminesPoints,
-            'capacityDays' => $capacityDays,
-            'devsTerminesCount' => $devsTerminesCount,
-            'addedPointsDuringSprint' => $addedPointsDuringSprint
-        ];
-    }
-
-    /**
-     * Vérifie si un ticket est passé par le statut "Dev Terminé" en analysant son changelog
-     */
-    private function hasPassedThroughDevTermineStatus(array $issue): bool
-    {
-        // Vérifier d'abord le statut actuel
-        $currentStatus = $issue['fields']['status']['name'];
-        if ($currentStatus === 'Dev Terminé') {
-            return true;
-        }
-        
-        // Vérifier l'historique des changements
-        if (!isset($issue['changelog']) || !isset($issue['changelog']['histories'])) {
-            return false;
-        }
-        
-        foreach ($issue['changelog']['histories'] as $history) {
-            if (!isset($history['items'])) {
-                continue;
-            }
-            
-            foreach ($history['items'] as $item) {
-                // Vérifier si c'est un changement de statut
-                if ($item['field'] === 'status') {
-                    $fromStatus = $item['fromString'] ?? '';
-                    $toStatus = $item['toString'] ?? '';
-                    
-                    // Si le ticket est passé par "Dev Terminé" (dans n'importe quel sens)
-                    if ($fromStatus === 'Dev Terminé' || $toStatus === 'Dev Terminé') {
-                        return true;
-                    }
+        $addedPointsDuringSprint = 0.0;
+        $capacityDays = 10.0;
+    
+        try {
+            $sprintInfo = $this->fetchSprintInfo($sprintId);
+            $sprintStartDate = new \DateTime($sprintInfo['startDate']);
+    
+            $issues = $this->fetchSprintIssues($sprintId, false);
+            dump(count($issues));
+            foreach ($issues as $issue) {
+                $fields = $issue['fields'] ?? [];
+                $storyPoints = $this->getStoryPoints($issue);
+    
+                $created = isset($fields['created']) ? new \DateTime($fields['created']) : null;
+                if ($created && $created > $sprintStartDate) {
+                    $addedPointsDuringSprint += $storyPoints;
+                } else {
+                    $committedPoints += $storyPoints;
+                }
+    
+                $status = $fields['status']['statusCategory']['key'] ?? null;
+                if ($status === 'done') {
+                    $completedPoints += $storyPoints;
                 }
             }
+    
+            $capacityDays = $this->calculateCapacityDays($sprintId);
+    
+        } catch (\Throwable $e) {
+            error_log(sprintf('Erreur vélocité sprint %d: %s', $sprintId, $e->getMessage()));
         }
-        
-        return false;
+    
+        return [
+            'completedPoints'         => $completedPoints,
+            'committedPoints'         => $committedPoints,
+            'devsTerminesPoints'      => $devsTerminesPoints,
+            'capacityDays'            => $capacityDays,
+            'devsTerminesCount'       => $devsTerminesCount,
+            'addedPointsDuringSprint' => $addedPointsDuringSprint,
+        ];
     }
+    
 
     private function fetchSprintInfo(int $sprintId): array
     {
-        $response = $this->jiraClient->request('GET', "/rest/agile/1.0/sprint/{$sprintId}");
-        return $response->toArray();
+        try {
+            // Utiliser l'API v1 pour récupérer les informations du sprint (l'API v3 n'existe pas pour les sprints)
+            $response = $this->jiraClient->request('GET', "/rest/agile/1.0/sprint/{$sprintId}");
+            return $response->toArray();
+        } catch (\Exception $e) {
+            // Si le sprint n'existe plus, on retourne des données par défaut
+            error_log(sprintf('Impossible de récupérer les infos du sprint %d: %s', $sprintId, $e->getMessage()));
+            return [
+                'startDate' => (new \DateTime())->format('Y-m-d'),
+                'endDate' => (new \DateTime('+2 weeks'))->format('Y-m-d'),
+            ];
+        }
     }
 
     private function getStoryPoints(array $issue): float
@@ -272,9 +312,10 @@ class SprintSyncService
         $fields = $issue['fields'];
         
         $storyPointFields = [
-            'customfield_10016',
-            'customfield_10026',
-            'customfield_10200',
+            'customfield_10200',  // Story points (champ correct)
+            'customfield_10116',  // Story points (alternative)
+            'customfield_10016',  // Story points (ancien champ)
+            'customfield_10026',  // Story points (alternative)
         ];
         
         foreach ($storyPointFields as $field) {

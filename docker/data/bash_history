@@ -14,3 +14,8 @@ ll
 ll web/
 ll
 cat /etc/os-release
+docker exec -ti --user 1000 symfony_frankenphp php -m | grep -i dom
+php -m | grep -i dom
+php bin/console app:sync-jira --all --from=$(date -d "3 months ago" +%Y-%m-%d)
+make sync-last-3-months
+exit

@@ -20,6 +20,9 @@ class MonthlyStats
     private ?int $bugsCount = 0;
 
     #[ORM\Column]
+    private ?int $bugTasksCount = 0;
+
+    #[ORM\Column]
     private ?int $deliveredTicketsCount = 0;
 
     #[ORM\Column]
@@ -49,6 +52,17 @@ class MonthlyStats
     public function setBugsCount(int $bugsCount): static
     {
         $this->bugsCount = $bugsCount;
+        return $this;
+    }
+
+    public function getBugTasksCount(): ?int
+    {
+        return $this->bugTasksCount;
+    }
+
+    public function setBugTasksCount(int $bugTasksCount): static
+    {
+        $this->bugTasksCount = $bugTasksCount;
         return $this;
     }
 

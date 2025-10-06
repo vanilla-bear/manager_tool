@@ -1,0 +1,343 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard de Prédictions{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-tachometer-alt text-primary"></i>
+                Dashboard de Prédictions
+            </h1>
+        </div>
+    </div>
+
+    <!-- Métriques Principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ velocity_prediction ? velocity_prediction.predicted_velocity : 'N/A' }}</h4>
+                            <p class="mb-0">Vélocité Prédite</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ velocity_prediction and velocity_prediction.confidence > 0.7 ? 'success' : velocity_prediction and velocity_prediction.confidence > 0.5 ? 'warning' : 'danger' }} text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ velocity_prediction ? (velocity_prediction.confidence * 100)|round : 0 }}%</h4>
+                            <p class="mb-0">Confiance</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-bullseye fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ completion_prediction and completion_prediction.completion_probability > 80 ? 'success' : completion_prediction and completion_prediction.completion_probability > 60 ? 'warning' : 'danger' }} text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ completion_prediction ? completion_prediction.completion_probability : 0 }}%</h4>
+                            <p class="mb-0">Réussite Prédite</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-target fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ risk_factors|length == 0 ? 'success' : risk_factors|length <= 2 ? 'warning' : 'danger' }} text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ risk_factors|length }}</h4>
+                            <p class="mb-0">Risques Identifiés</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques et Analyses -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area"></i>
+                        Analyse de Vélocité
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if velocity_prediction %}
+                    <canvas id="velocityChart" width="400" height="200"></canvas>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Données insuffisantes pour générer le graphique</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-pie-chart"></i>
+                        Répartition des Facteurs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if velocity_prediction %}
+                    <canvas id="factorsChart" width="300" height="200"></canvas>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-pie-chart fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Données insuffisantes</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détails des Prédictions -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i>
+                        Détails de la Prédiction
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if velocity_prediction %}
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Vélocité Prédite:</strong></td>
+                            <td>{{ velocity_prediction.predicted_velocity }} points</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Moyenne Historique:</strong></td>
+                            <td>{{ velocity_prediction.historical_average }} points</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tendance:</strong></td>
+                            <td>
+                                <span class="badge bg-{{ velocity_prediction.trend > 0 ? 'success' : velocity_prediction.trend < 0 ? 'danger' : 'secondary' }}">
+                                    {{ velocity_prediction.trend > 0 ? '+' : '' }}{{ velocity_prediction.trend }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Saisonnalité:</strong></td>
+                            <td>
+                                <span class="badge bg-{{ velocity_prediction.seasonality > 0 ? 'success' : velocity_prediction.seasonality < 0 ? 'danger' : 'secondary' }}">
+                                    {{ velocity_prediction.seasonality > 0 ? '+' : '' }}{{ velocity_prediction.seasonality }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Capacité Équipe:</strong></td>
+                            <td>{{ velocity_prediction.team_capacity }} heures</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">Aucune donnée disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Facteurs de Risque
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if risk_factors|length > 0 %}
+                        {% for risk in risk_factors %}
+                        <div class="alert alert-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }} alert-sm mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ risk.description }}</strong>
+                                    <br><small>{{ risk.impact }}</small>
+                                </div>
+                                <span class="badge bg-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }}">
+                                    {{ risk.severity|upper }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            Aucun facteur de risque identifié
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommandations -->
+    {% if velocity_prediction and velocity_prediction.recommendations|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i>
+                        Recommandations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for recommendation in velocity_prediction.recommendations %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">
+                                                <i class="fas fa-{{ recommendation.priority == 'high' ? 'exclamation-circle' : 'info-circle' }}"></i>
+                                                {{ recommendation.type|title }}
+                                            </h6>
+                                            <p class="card-text">{{ recommendation.message }}</p>
+                                        </div>
+                                        <span class="badge bg-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }}">
+                                            {{ recommendation.priority|upper }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions Rapides -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Actions Rapides</h6>
+                            <small class="text-muted">Utilisez ces boutons pour des actions spécifiques</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i> Actualiser
+                            </button>
+                            <a href="{{ path('app_prediction_index') }}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-list"></i> Vue Détaillée
+                            </a>
+                            <button class="btn btn-primary" onclick="exportPredictions()">
+                                <i class="fas fa-download"></i> Exporter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts pour les graphiques -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Graphique de vélocité
+{% if velocity_prediction %}
+const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+new Chart(velocityCtx, {
+    type: 'line',
+    data: {
+        labels: ['Sprint N-3', 'Sprint N-2', 'Sprint N-1', 'Sprint Prédit'],
+        datasets: [{
+            label: 'Vélocité',
+            data: [{{ velocity_prediction.historical_average }}, {{ velocity_prediction.historical_average }}, {{ velocity_prediction.historical_average }}, {{ velocity_prediction.predicted_velocity }}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Graphique des facteurs
+const factorsCtx = document.getElementById('factorsChart').getContext('2d');
+new Chart(factorsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Tendance', 'Saisonnalité', 'Capacité Équipe'],
+        datasets: [{
+            data: [{{ velocity_prediction.trend|abs }}, {{ velocity_prediction.seasonality|abs }}, {{ velocity_prediction.team_capacity }}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+{% endif %}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function exportPredictions() {
+    // Implémentation de l'export
+    alert('Fonctionnalité d\'export en cours de développement');
+}
+
+// Auto-refresh toutes les 5 minutes
+setInterval(function() {
+    // Optionnel: actualisation automatique
+}, 300000);
+</script>
+{% endblock %}
+

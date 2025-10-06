@@ -127,6 +127,7 @@
                         <tr>
                             <th>Month</th>
                             <th>Bugs Created</th>
+                            <th>Bug Tasks</th>
                             <th>Features Delivered</th>
                             <th>Bug Rate</th>
                             <th>Last Sync</th>
@@ -170,6 +171,43 @@
                                                         <small class="text-muted mt-2 d-block">
                                                             Click the copy button and paste this query in Jira's advanced search to see the bugs.
                                                         </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ stat.bugTasksCount }}
+                                    <button type="button" 
+                                            class="btn btn-link btn-sm p-0 ms-2" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#bugTasksModal{{ stat.month|date('Y-m') }}">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+
+                                    <!-- Modal for Bug Tasks JQL -->
+                                    <div class="modal fade" id="bugTasksModal{{ stat.month|date('Y-m') }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">JQL Query for Bug Tasks - {{ stat.month|date('F Y') }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label class="form-label">JQL Query:</label>
+                                                        <div class="input-group">
+                                                            <input type="text" 
+                                                                   class="form-control" 
+                                                                   value="project = &quot;MD&quot; AND issuetype IN subTaskIssueTypes() AND created >= &quot;{{ stat.month|date('Y-m-01') }}&quot; AND created <= &quot;{{ stat.month|date('Y-m-t') }}&quot;" 
+                                                                   readonly>
+                                                            <button class="btn btn-outline-secondary" 
+                                                                    type="button" 
+                                                                    onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
+                                                                <i class="fas fa-copy"></i>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

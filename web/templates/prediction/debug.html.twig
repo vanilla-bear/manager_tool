@@ -1,0 +1,340 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Debug Prédictions{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-bug text-warning"></i>
+                Debug - Prédictions de Vélocité
+            </h1>
+        </div>
+    </div>
+
+    {% if velocity_prediction %}
+    <!-- Informations de Debug -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Informations de Debug
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if velocity_prediction.sprint_details %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6>Détails des Sprints Jira:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Sprint</th>
+                                            <th>Jira ID</th>
+                                            <th>Période</th>
+                                            <th>Engagé</th>
+                                            <th>Terminé</th>
+                                            <th>Ajouté</th>
+                                            <th>Taux</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sprint in velocity_prediction.sprint_details %}
+                                        <tr>
+                                            <td><strong>{{ sprint.name }}</strong></td>
+                                            <td><span class="badge bg-secondary">{{ sprint.jira_id }}</span></td>
+                                            <td>
+                                                {% if sprint.start_date and sprint.end_date %}
+                                                    {{ sprint.start_date }} → {{ sprint.end_date }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ sprint.committed_points }}</td>
+                                            <td><strong>{{ sprint.completed_points }}</strong></td>
+                                            <td>
+                                                {% if sprint.added_points > 0 %}
+                                                    <span class="text-warning">+{{ sprint.added_points }}</span>
+                                                {% else %}
+                                                    <span class="text-success">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sprint.committed_points > 0 %}
+                                                    {{ ((sprint.completed_points / sprint.committed_points) * 100)|round(1) }}%
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Calculs:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Moyenne:</strong> {{ velocity_prediction.debug_info.average }}</li>
+                                <li><strong>Tendance:</strong> {{ velocity_prediction.debug_info.trend }}</li>
+                                <li><strong>Variance:</strong> {{ velocity_prediction.debug_info.variance }}</li>
+                            </ul>
+                            
+                            <h6 class="mt-3">Vélocités:</h6>
+                            <pre class="bg-light p-2 small">{{ velocity_prediction.debug_info.velocities|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résultats de la Prédiction -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Résultats de la Prédiction
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-primary mb-0">{{ velocity_prediction.predicted_velocity }}</h3>
+                                <p class="text-muted">Vélocité Prédite</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-{{ velocity_prediction.confidence > 0.7 ? 'success' : velocity_prediction.confidence > 0.5 ? 'warning' : 'danger' }} mb-0">
+                                    {{ (velocity_prediction.confidence * 100)|round }}%
+                                </h3>
+                                <p class="text-muted">Confiance</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-info mb-0">{{ velocity_prediction.historical_average }}</h3>
+                                <p class="text-muted">Moyenne Historique</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-{{ velocity_prediction.trend > 0 ? 'success' : velocity_prediction.trend < 0 ? 'danger' : 'secondary' }} mb-0">
+                                    {{ velocity_prediction.trend > 0 ? '+' : '' }}{{ velocity_prediction.trend }}
+                                </h3>
+                                <p class="text-muted">Tendance</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        Graphique Simple
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="simpleChart" width="300" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facteurs de Risque -->
+    {% if velocity_prediction.risk_factors|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Facteurs de Risque Identifiés
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for risk in velocity_prediction.risk_factors %}
+                    <div class="alert alert-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }} mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="alert-heading mb-1">
+                                    <i class="fas fa-{{ risk.severity == 'high' ? 'exclamation-circle' : 'exclamation-triangle' }}"></i>
+                                    {{ risk.description }}
+                                </h6>
+                                <p class="mb-0">{{ risk.impact }}</p>
+                            </div>
+                            <span class="badge bg-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }}">
+                                {{ risk.severity|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommandations -->
+    {% if velocity_prediction.recommendations|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i>
+                        Recommandations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for recommendation in velocity_prediction.recommendations %}
+                    <div class="alert alert-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }} mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ recommendation.message }}</strong>
+                            </div>
+                            <span class="badge bg-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }}">
+                                {{ recommendation.priority|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Message d'erreur -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h4 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Données Insuffisantes
+                </h4>
+                <p>Il n'y a pas assez de données historiques pour générer des prédictions fiables.</p>
+                <p>Assurez-vous d'avoir au moins 3 sprints avec des données de vélocité.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Actions de Debug</h6>
+                            <small class="text-muted">Utilisez ces boutons pour tester le système</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="refreshPredictions()">
+                                <i class="fas fa-sync-alt"></i> Actualiser
+                            </button>
+                            <a href="{{ path('app_prediction_index') }}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-list"></i> Vue Normale
+                            </a>
+                            <a href="{{ path('app_prediction_dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if velocity_prediction and velocity_prediction.debug_info %}
+// Graphique simple des vélocités
+const ctx = document.getElementById('simpleChart').getContext('2d');
+const velocities = {{ velocity_prediction.debug_info.velocities|json_encode|raw }};
+const sprintDetails = {{ velocity_prediction.sprint_details|json_encode|raw }};
+
+// Utiliser les vrais noms des sprints
+const labels = sprintDetails.map(sprint => {
+    // Raccourcir le nom pour l'affichage
+    const shortName = sprint.name.length > 20 ? sprint.name.substring(0, 17) + '...' : sprint.name;
+    return shortName;
+});
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Vélocité Historique',
+            data: velocities,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }, {
+            label: 'Moyenne',
+            data: velocities.map(() => {{ velocity_prediction.historical_average }}),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderDash: [5, 5]
+        }, {
+            label: 'Prédiction',
+            data: velocities.map((_, index) => index === 0 ? {{ velocity_prediction.predicted_velocity }} : null),
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            pointRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(context) {
+                        const index = context[0].dataIndex;
+                        return sprintDetails[index].name;
+                    },
+                    label: function(context) {
+                        const index = context.dataIndex;
+                        const sprint = sprintDetails[index];
+                        return [
+                            `Sprint: ${sprint.name}`,
+                            `Jira ID: ${sprint.jira_id}`,
+                            `Engagé: ${sprint.committed_points}`,
+                            `Terminé: ${sprint.completed_points}`,
+                            `Ajouté: ${sprint.added_points}`
+                        ];
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function refreshPredictions() {
+    location.reload();
+}
+</script>
+{% endblock %}

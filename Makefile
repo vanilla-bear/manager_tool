@@ -8,7 +8,7 @@ USER_NAME=localuser
 # Chemin vers le dossier web
 WEB_DIR=web
 
-.PHONY: help up down restart logs exec exec-root clean rebuild status chown install test lint sync sync-all sync-sprints sync-last-month sync-last-3-months sync-custom reset-metrics reset-metrics-force reset-sprints reset-bugs reset-and-sync
+.PHONY: help up down restart logs exec exec-root clean rebuild status chown install test lint sync sync-all sync-sprints sync-last-month sync-last-3-months sync-custom list-sprints list-boards current-sprint reset-metrics reset-metrics-force reset-sprints reset-bugs reset-and-sync
 
 # Afficher l'aide
 help:
@@ -34,6 +34,7 @@ help:
 	@echo "  make sync-custom    Synchroniser les données pour une période personnalisée (FROM=YYYY-MM-DD TO=YYYY-MM-DD)"
 	@echo "  make list-sprints  Lister tous les sprints du tableau Jira"
 	@echo "  make list-boards  Lister tous les tableaux Jira disponibles"
+	@echo "  make current-sprint Afficher les informations du sprint courant"
 	@echo "  make reset-metrics  Réinitialiser les données"
 	@echo "  make reset-metrics-force Réinitialiser toutes les données des métriques (sans confirmation)"
 	@echo "  make reset-sprints Réinitialiser uniquement les données des sprints"
@@ -94,23 +95,23 @@ lint:
 
 # Synchroniser les données
 sync:
-	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
 
 # Synchroniser toutes les données depuis 6 mois
 sync-all:
-	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all
 
 # Synchroniser uniquement les sprints depuis 6 mois
 sync-sprints:
-	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --sprints
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --sprints
 
 # Synchroniser les données du dernier mois
 sync-last-month:
-	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "1 month ago" +%Y-%m-%d)
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "1 month ago" +%Y-%m-%d)
 
 # Synchroniser les données des 3 derniers mois
 sync-last-3-months:
-	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "3 months ago" +%Y-%m-%d)
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:sync-jira --all --from=$(shell date -d "3 months ago" +%Y-%m-%d)
 
 # Synchroniser les données pour une période personnalisée
 sync-custom:
@@ -128,6 +129,10 @@ list-sprints:
 # Lister les tableaux
 list-boards:
 	docker exec -ti --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:list-boards
+
+# Afficher les informations du sprint courant
+current-sprint:
+	docker exec --user $(USER_ID) $(CONTAINER_NAME) php bin/console app:current-sprint
 
 # Réinitialiser les données
 reset-metrics: ## Réinitialise toutes les données des métriques (avec confirmation)

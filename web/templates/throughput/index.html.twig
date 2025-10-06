@@ -84,28 +84,45 @@
                 <div class="summary-card">
                     <h3>Débit moyen</h3>
                     <div class="summary-value">{{ data.averages.total|number_format(1) }}</div>
-                    <small>éléments/mois</small>
+                    <small>éléments/sprint</small>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="summary-card">
                     <h3>Fonctionnalités</h3>
                     <div class="summary-value">{{ data.averages.features|number_format(1) }}</div>
-                    <small>par mois</small>
+                    <small>par sprint</small>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="summary-card">
                     <h3>Bugs</h3>
                     <div class="summary-value">{{ data.averages.bugs|number_format(1) }}</div>
-                    <small>par mois</small>
+                    <small>par sprint</small>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="summary-card">
                     <h3>Améliorations</h3>
                     <div class="summary-value">{{ data.averages.improvements|number_format(1) }}</div>
-                    <small>par mois</small>
+                    <small>par sprint</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3>Bug Tasks</h3>
+                    <div class="summary-value">{{ data.averages.bug_tasks|number_format(1) }}</div>
+                    <small>par sprint</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3>Total Bug Tasks</h3>
+                    <div class="summary-value">{{ data.summary.total_bug_tasks }}</div>
+                    <small>sur la période</small>
                 </div>
             </div>
         </div>
@@ -114,7 +131,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Évolution du débit</h5>
+                        <h5 class="card-title">Débit par sprint</h5>
                         <div class="chart-container">
                             <canvas id="throughputChart"></canvas>
                         </div>
@@ -124,52 +141,72 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Mois</th>
+                                            <th>Sprint</th>
+                                            <th>Période</th>
                                             <th>Total</th>
                                             <th>Fonctionnalités</th>
                                             <th>Bugs</th>
                                             <th>Améliorations</th>
+                                            <th>Bug Tasks</th>
+                                            <th>Points terminés</th>
+                                            <th>Devs terminés</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for month in data.monthly %}
+                                        {% for sprint in data.sprints %}
                                             <tr>
-                                                <td>{{ month.month }}</td>
+                                                <td><strong>{{ sprint.sprint }}</strong></td>
+                                                <td><small>{{ sprint.period }}</small></td>
                                                 <td>
-                                                    {% if month.total > 0 %}
-                                                        <a href="{{ month.links.total }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                            {{ month.total }} tickets
+                                                    {% if sprint.total > 0 %}
+                                                        <a href="{{ sprint.links.total }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                            {{ sprint.total }} tickets
                                                         </a>
                                                     {% else %}
                                                         0
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    {% if month.features > 0 %}
-                                                        <a href="{{ month.links.features }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                                            {{ month.features }} tickets
+                                                    {% if sprint.features > 0 %}
+                                                        <a href="{{ sprint.links.features }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                                            {{ sprint.features }} tickets
                                                         </a>
                                                     {% else %}
                                                         0
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    {% if month.bugs > 0 %}
-                                                        <a href="{{ month.links.bugs }}" target="_blank" class="btn btn-sm btn-outline-danger">
-                                                            {{ month.bugs }} tickets
+                                                    {% if sprint.bugs > 0 %}
+                                                        <a href="{{ sprint.links.bugs }}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                                            {{ sprint.bugs }} tickets
                                                         </a>
                                                     {% else %}
                                                         0
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    {% if month.improvements > 0 %}
-                                                        <a href="{{ month.links.improvements }}" target="_blank" class="btn btn-sm btn-outline-warning">
-                                                            {{ month.improvements }} tickets
+                                                    {% if sprint.improvements > 0 %}
+                                                        <a href="{{ sprint.links.improvements }}" target="_blank" class="btn btn-sm btn-outline-warning">
+                                                            {{ sprint.improvements }} tickets
                                                         </a>
                                                     {% else %}
                                                         0
                                                     {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if sprint.bug_tasks > 0 %}
+                                                        <a href="{{ sprint.links.bug_tasks }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                                                            {{ sprint.bug_tasks }} tasks
+                                                        </a>
+                                                    {% else %}
+                                                        0
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ sprint.completed_points|number_format(1) }} pts</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary">{{ sprint.devs_terminés }} tickets</span>
                                                 </td>
                                             </tr>
                                         {% endfor %}
@@ -192,34 +229,41 @@
             const ctx = document.getElementById('throughputChart').getContext('2d');
             
             const data = {
-                labels: {{ data.monthly|map(d => d.month)|json_encode|raw }},
+                labels: {{ data.sprints|map(d => d.sprint)|json_encode|raw }},
                 datasets: [
                     {
                         label: 'Total',
-                        data: {{ data.monthly|map(d => d.total)|json_encode|raw }},
+                        data: {{ data.sprints|map(d => d.total)|json_encode|raw }},
                         backgroundColor: 'rgba(13, 110, 253, 0.2)',
                         borderColor: 'rgba(13, 110, 253, 1)',
                         borderWidth: 2
                     },
                     {
                         label: 'Fonctionnalités',
-                        data: {{ data.monthly|map(d => d.features)|json_encode|raw }},
+                        data: {{ data.sprints|map(d => d.features)|json_encode|raw }},
                         backgroundColor: 'rgba(25, 135, 84, 0.2)',
                         borderColor: 'rgba(25, 135, 84, 1)',
                         borderWidth: 2
                     },
                     {
                         label: 'Bugs',
-                        data: {{ data.monthly|map(d => d.bugs)|json_encode|raw }},
+                        data: {{ data.sprints|map(d => d.bugs)|json_encode|raw }},
                         backgroundColor: 'rgba(220, 53, 69, 0.2)',
                         borderColor: 'rgba(220, 53, 69, 1)',
                         borderWidth: 2
                     },
                     {
                         label: 'Améliorations',
-                        data: {{ data.monthly|map(d => d.improvements)|json_encode|raw }},
+                        data: {{ data.sprints|map(d => d.improvements)|json_encode|raw }},
                         backgroundColor: 'rgba(255, 193, 7, 0.2)',
                         borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Bug Tasks',
+                        data: {{ data.sprints|map(d => d.bug_tasks)|json_encode|raw }},
+                        backgroundColor: 'rgba(108, 117, 125, 0.2)',
+                        borderColor: 'rgba(108, 117, 125, 1)',
                         borderWidth: 2
                     }
                 ]
@@ -242,14 +286,14 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Mois'
+                                text: 'Sprint'
                             }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Débit mensuel'
+                            text: 'Débit par sprint'
                         },
                         tooltip: {
                             mode: 'index',

@@ -26,6 +26,10 @@ class BugsService
         $bugs = $this->fetchBugs($startDate, $endDate);
         $this->logger->info('BugsService: Fetched bugs count', ['count' => count($bugs)]);
         
+        // Récupérer les Bug Tasks
+        $bugTasks = $this->fetchBugTasks($startDate, $endDate);
+        $this->logger->info('BugsService: Fetched bug tasks count', ['count' => count($bugTasks)]);
+        
         $monthlyBugs = [];
         $priorityStats = [
             'highest' => 0,
@@ -76,10 +80,12 @@ class BugsService
     
         return [
             'total_bugs'            => count($bugs),
+            'total_bug_tasks'       => count($bugTasks),
             'bug_rate'              => $bugRate,
             'priority_distribution' => $priorityStats,
             'monthly_data'          => $monthly,
             'bugs'                  => $bugs,
+            'bug_tasks'             => $bugTasks,
         ];
     }
     
@@ -249,6 +255,105 @@ class BugsService
     
         // 3) Dernier recours : zéro (évite les estimations trompeuses)
         return 0;
+    }
+
+    /**
+     * Récupère les Bug Tasks (sous-tâches) pour une période donnée
+     */
+    private function fetchBugTasks(DateTime $startDate, DateTime $endDate): array
+    {
+        $allBugTasks = [];
+        
+        $jql = sprintf(
+            'project = "MD" AND issuetype IN subTaskIssueTypes() AND created >= "%s" AND created <= "%s" ORDER BY created ASC',
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
+        
+        $this->logger->info('BugsService: Bug Tasks JQL Query', ['jql' => $jql]);
+        
+        $maxResults = 100;
+        $fieldsCsv = 'key,summary,created,resolutiondate,status,priority,parent';
+        
+        $nextPageToken = null;
+        $pageSafeguard = 0; 
+        $pageLimit = 200;
+        
+        try {
+            do {
+                $query = [
+                    'jql'        => $jql,
+                    'maxResults' => $maxResults,
+                    'fields'     => $fieldsCsv,
+                ];
+                if ($nextPageToken) {
+                    $query['nextPageToken'] = $nextPageToken;
+                }
+                
+                $response = $this->jiraClient->request('GET', '/rest/api/3/search/jql', [
+                    'query' => $query,
+                ]);
+                
+                $data = $response->toArray(false);
+                
+                $this->logger->info('BugsService: Bug Tasks API Response', [
+                    'issuesCount' => count($data['issues'] ?? []),
+                    'nextPageToken' => $data['nextPageToken'] ?? null
+                ]);
+                
+                $issues = $data['issues'] ?? [];
+                foreach ($issues as $issue) {
+                    $allBugTasks[] = $issue;
+                }
+                
+                $nextPageToken = $data['nextPageToken'] ?? null;
+                $pageSafeguard++;
+                
+            } while ($nextPageToken !== null && $pageSafeguard < $pageLimit);
+            
+            if ($pageSafeguard >= $pageLimit) {
+                error_log('WARN: Bug Tasks pagination interrompue (limite de sécurité atteinte).');
+            }
+            
+            return $allBugTasks;
+            
+        } catch (\Throwable $t) {
+            $this->logger->warning('BugsService: Enhanced search failed for Bug Tasks, falling back to legacy', [
+                'error' => $t->getMessage()
+            ]);
+        }
+        
+        // Fallback legacy
+        $startAt = 0;
+        $pageSafeguard = 0;
+        do {
+            $response = $this->jiraClient->request('POST', '/rest/api/3/search', [
+                'json' => [
+                    'jql'        => $jql,
+                    'startAt'    => $startAt,
+                    'maxResults' => $maxResults,
+                    'fields'     => ['key', 'summary', 'created', 'resolutiondate', 'status', 'priority', 'parent'],
+                ],
+            ]);
+            $data = $response->toArray(false);
+            
+            $issues = $data['issues'] ?? [];
+            foreach ($issues as $issue) {
+                $allBugTasks[] = $issue;
+            }
+            
+            $returned = count($issues);
+            $total    = isset($data['total']) ? (int)$data['total'] : null;
+            
+            if ($returned === 0 || ($total !== null && $startAt + $returned >= $total)) {
+                break;
+            }
+            
+            $startAt += $returned;
+            $pageSafeguard++;
+        } while ($pageSafeguard < $pageLimit);
+        
+        return $allBugTasks;
     }
     
 } 

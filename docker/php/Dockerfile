@@ -1,5 +1,5 @@
-# Utiliser l'image de base de FrankenPHP
-FROM dunglas/frankenphp
+# Utiliser l'image de base de FrankenPHP avec PHP 8.3
+FROM dunglas/frankenphp:1.0-php8.3
 
 # GIT
 RUN apt-get update && apt-get install -y \

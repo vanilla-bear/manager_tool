@@ -56,11 +56,16 @@
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ path('app_bugs_index') }}">Bugs</a></li>
                         <li><a class="dropdown-item" href="{{ path('app_mttr_index') }}">MTTR</a></li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if app.request.get('_route') starts with 'app_blockers_' %}active{% endif %}" href="{{ path('app_blockers_index') }}">
-                                <i class="bi bi-exclamation-triangle"></i> Blocages
-                            </a>
-                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ path('app_prediction_index') }}">
+                            <i class="fas fa-crystal-ball"></i> Prédictions
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_prediction_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard Prédictions
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ path('app_prediction_debug') }}">
+                            <i class="fas fa-bug"></i> Debug Prédictions
+                        </a></li>
                     </ul>
                 </li>
 

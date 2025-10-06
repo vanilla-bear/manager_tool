@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\MonthlyStatsRepository;
+use App\Repository\SprintRepository;
 use App\Service\BugStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,28 +15,32 @@ class BugController extends AbstractController
 {
     public function __construct(
         private readonly MonthlyStatsRepository $monthlyStatsRepository,
-        private readonly BugStatsService $bugStatsService
+        private readonly BugStatsService $bugStatsService,
+        private readonly SprintRepository $sprintRepository
     ) {
     }
 
     #[Route('/', name: 'app_bugs_index', methods: ['GET'])]
     public function index(): Response
     {
-        $stats = $this->monthlyStatsRepository->findLastMonths(3);
-        $averageBugRate = $this->monthlyStatsRepository->getAverageBugRate(3);
-        $averageMonthlyBugs = $this->monthlyStatsRepository->getAverageMonthlyBugs(3);
-
-        // Get JQL queries for each month
-        $jqlQueries = [];
-        foreach ($stats as $stat) {
-            $jqlQueries[$stat->getMonth()->format('Y-m')] = $this->bugStatsService->getBugsJQLForMonth($stat->getMonth());
+        // Utiliser une période qui couvre tous les sprints disponibles
+        $allSprints = $this->sprintRepository->findLastSprints(20);
+        if (!empty($allSprints)) {
+            $startDate = $allSprints[count($allSprints) - 1]->getStartDate()->setTime(0, 0, 0);
+            $endDate = $allSprints[0]->getEndDate()->setTime(23, 59, 59);
+        } else {
+            $startDate = new \DateTime('2025-01-01');
+            $endDate = new \DateTime('2025-12-31');
         }
 
-        return $this->render('bug/index.html.twig', [
-            'stats' => $stats,
-            'averageBugRate' => $averageBugRate,
-            'averageMonthlyBugs' => $averageMonthlyBugs,
-            'jqlQueries' => $jqlQueries,
+        $sprintBugStats = $this->bugStatsService->getSprintBugStats($startDate, $endDate);
+
+        return $this->render('bug/sprint_index.html.twig', [
+            'sprintStats' => $sprintBugStats,
+            'period' => [
+                'start' => $startDate->format('Y-m-d'),
+                'end' => $endDate->format('Y-m-d'),
+            ]
         ]);
     }
 

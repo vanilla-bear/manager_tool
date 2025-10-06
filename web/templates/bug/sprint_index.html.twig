@@ -1,0 +1,239 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bug Statistics by Sprint{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Bug Statistics by Sprint</h1>
+            <div class="d-flex align-items-center gap-3">
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="fas fa-info-circle"></i>
+                    <small>Période: {{ period.start }} à {{ period.end }}</small>
+                </div>
+                <a href="{{ path('app_bugs_sync') }}" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Sync Statistics
+                </a>
+            </div>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ sprintStats.totals.bugs }}</h4>
+                                <p class="card-text">Total Bugs</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-bug fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ sprintStats.totals.bug_tasks }}</h4>
+                                <p class="card-text">Bug Tasks</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-tasks fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ sprintStats.totals.delivered }}</h4>
+                                <p class="card-text">Features Delivered</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ sprintStats.totals.bug_rate }}%</h4>
+                                <p class="card-text">Bug Rate</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Averages -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Averages per Sprint</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h3 class="text-primary">{{ sprintStats.averages.bugs_per_sprint }}</h3>
+                                <p class="text-muted">Bugs per Sprint</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="text-warning">{{ sprintStats.averages.bug_tasks_per_sprint }}</h3>
+                                <p class="text-muted">Bug Tasks per Sprint</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="text-success">{{ sprintStats.averages.delivered_per_sprint }}</h3>
+                                <p class="text-muted">Delivered per Sprint</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sprint Details -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Sprint Details</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sprint</th>
+                                    <th>Period</th>
+                                    <th>Bugs</th>
+                                    <th>Bug Tasks</th>
+                                    <th>Delivered</th>
+                                    <th>Bug Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sprintStat in sprintStats.sprints %}
+                                    <tr>
+                                        <td><strong>{{ sprintStat.sprint.name }}</strong></td>
+                                        <td>
+                                            <small>{{ sprintStat.sprint.startDate|date('Y-m-d') }} to {{ sprintStat.sprint.endDate|date('Y-m-d') }}</small>
+                                        </td>
+                                        <td>
+                                            {{ sprintStat.bugs_count }}
+                                            <button type="button" 
+                                                    class="btn btn-link btn-sm p-0 ms-2" 
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#bugsModal{{ sprintStat.sprint.id }}">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+
+                                            <!-- Modal for Bugs JQL -->
+                                            <div class="modal fade" id="bugsModal{{ sprintStat.sprint.id }}" tabindex="-1">
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">JQL Query for Bugs - {{ sprintStat.sprint.name }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="form-group">
+                                                                <label class="form-label">JQL Query:</label>
+                                                                <div class="input-group">
+                                                                    <input type="text" 
+                                                                           class="form-control" 
+                                                                           value="{{ sprintStat.jql_queries.bugs }}" 
+                                                                           readonly>
+                                                                    <button class="btn btn-outline-secondary" 
+                                                                            type="button" 
+                                                                            onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
+                                                                        <i class="fas fa-copy"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {{ sprintStat.bug_tasks_count }}
+                                            <button type="button" 
+                                                    class="btn btn-link btn-sm p-0 ms-2" 
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#bugTasksModal{{ sprintStat.sprint.id }}">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+
+                                            <!-- Modal for Bug Tasks JQL -->
+                                            <div class="modal fade" id="bugTasksModal{{ sprintStat.sprint.id }}" tabindex="-1">
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">JQL Query for Bug Tasks - {{ sprintStat.sprint.name }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="form-group">
+                                                                <label class="form-label">JQL Query:</label>
+                                                                <div class="input-group">
+                                                                    <input type="text" 
+                                                                           class="form-control" 
+                                                                           value="{{ sprintStat.jql_queries.bug_tasks }}" 
+                                                                           readonly>
+                                                                    <button class="btn btn-outline-secondary" 
+                                                                            type="button" 
+                                                                            onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
+                                                                        <i class="fas fa-copy"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ sprintStat.delivered_count }}</td>
+                                        <td>
+                                            <span class="badge {% if sprintStat.bug_rate > 20 %}bg-danger{% elseif sprintStat.bug_rate > 10 %}bg-warning{% else %}bg-success{% endif %}">
+                                                {{ sprintStat.bug_rate }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

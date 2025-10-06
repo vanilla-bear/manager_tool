@@ -33,20 +33,21 @@ services:
     class: Symfony\Contracts\HttpClient\HttpClientInterface
     factory: ['Symfony\Component\HttpClient\HttpClient', "createForBaseUri"]
     arguments:
-      $baseUri: "https://%jira.host%"
+      $baseUri: "https://studi-pedago.atlassian.net/"
       $defaultOptions:
         headers:
-          Authorization: "%jira.auth%"
+          Authorization: "Basic cm9tYWluLmRhbHZlcm55QHN0dWRpLmZyOk9HSHRNdXRCR0NRWnhaMXdrM0RKQkVBMw=="
 
   App\Service\SprintSyncService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Service\BugStatsService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
+      $sprintRepository: "@App\\Repository\\SprintRepository"
 
   App\Service\MTTRService:
     arguments:
@@ -59,38 +60,45 @@ services:
   App\Service\SprintDiagnosticService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Service\ThroughputService:
     arguments:
-      $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $sprintRepository: "@App\\Repository\\SprintRepository"
+
+  App\Command\CurrentSprintCommand:
+    arguments:
+      $sprintRepository: "@App\\Repository\\SprintRepository"
 
   App\Service\DeploymentFrequencyService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Service\BlockersService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Service\VelocityService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Service\TeamMemberAnalyticsService:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Command\ListSprintsCommand:
     arguments:
       $jiraClient: "@jira.client"
-      $jiraBoardId: "%jira.board_id%"
+      $jiraBoardId: "%env(JIRA_BOARD_ID)%"
 
   App\Command\ListBoardsCommand:
+    arguments:
+      $jiraClient: "@jira.client"
+
+  App\Command\DebugSprintTicketsCommand:
     arguments:
       $jiraClient: "@jira.client"

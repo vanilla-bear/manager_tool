@@ -1,0 +1,279 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prédictions de Vélocité{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-crystal-ball text-primary"></i>
+                Prédictions de Vélocité
+            </h1>
+        </div>
+    </div>
+
+    {% if velocity_prediction %}
+    <!-- Prédiction de Vélocité -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Prédiction de Vélocité du Prochain Sprint
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h2 class="text-primary mb-0">{{ velocity_prediction.predicted_velocity }}</h2>
+                                <p class="text-muted">Points prédits</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h2 class="text-{{ velocity_prediction.confidence > 0.7 ? 'success' : velocity_prediction.confidence > 0.5 ? 'warning' : 'danger' }} mb-0">
+                                    {{ (velocity_prediction.confidence * 100)|round }}%
+                                </h2>
+                                <p class="text-muted">Confiance</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Tendance</h6>
+                                <span class="badge bg-{{ velocity_prediction.trend > 0 ? 'success' : velocity_prediction.trend < 0 ? 'danger' : 'secondary' }}">
+                                    {{ velocity_prediction.trend > 0 ? '+' : '' }}{{ velocity_prediction.trend }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Saisonnalité</h6>
+                                <span class="badge bg-{{ velocity_prediction.seasonality > 0 ? 'success' : velocity_prediction.seasonality < 0 ? 'danger' : 'secondary' }}">
+                                    {{ velocity_prediction.seasonality > 0 ? '+' : '' }}{{ velocity_prediction.seasonality }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Capacité Équipe</h6>
+                                <span class="badge bg-info">{{ velocity_prediction.team_capacity }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-target"></i>
+                        Probabilité de Réussite
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if completion_prediction %}
+                        <h2 class="text-{{ completion_prediction.completion_probability > 80 ? 'success' : completion_prediction.completion_probability > 60 ? 'warning' : 'danger' }} mb-0">
+                            {{ completion_prediction.completion_probability }}%
+                        </h2>
+                        <p class="text-muted">Chance de réussite</p>
+                    {% else %}
+                        <p class="text-muted">Données insuffisantes</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facteurs de Risque -->
+    {% if risk_factors|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Facteurs de Risque Identifiés
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for risk in risk_factors %}
+                    <div class="alert alert-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }} mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="alert-heading mb-1">
+                                    <i class="fas fa-{{ risk.severity == 'high' ? 'exclamation-circle' : 'exclamation-triangle' }}"></i>
+                                    {{ risk.description }}
+                                </h6>
+                                <p class="mb-0">{{ risk.impact }}</p>
+                            </div>
+                            <span class="badge bg-{{ risk.severity == 'high' ? 'danger' : risk.severity == 'medium' ? 'warning' : 'info' }}">
+                                {{ risk.severity|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Historique des Sprints -->
+    {% if velocity_prediction.sprint_details|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Historique des Sprints Jira
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sprint</th>
+                                    <th>Jira ID</th>
+                                    <th>Période</th>
+                                    <th>Engagé</th>
+                                    <th>Terminé</th>
+                                    <th>Ajouté</th>
+                                    <th>Taux</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sprint in velocity_prediction.sprint_details %}
+                                <tr>
+                                    <td><strong>{{ sprint.name }}</strong></td>
+                                    <td><span class="badge bg-secondary">{{ sprint.jira_id }}</span></td>
+                                    <td>
+                                        {% if sprint.start_date and sprint.end_date %}
+                                            {{ sprint.start_date }} → {{ sprint.end_date }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ sprint.committed_points }}</td>
+                                    <td><strong class="text-primary">{{ sprint.completed_points }}</strong></td>
+                                    <td>
+                                        {% if sprint.added_points > 0 %}
+                                            <span class="text-warning">+{{ sprint.added_points }}</span>
+                                        {% else %}
+                                            <span class="text-success">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sprint.committed_points > 0 %}
+                                            {% set rate = (sprint.completed_points / sprint.committed_points) * 100 %}
+                                            <span class="badge bg-{{ rate >= 90 ? 'success' : rate >= 70 ? 'warning' : 'danger' }}">
+                                                {{ rate|round(1) }}%
+                                            </span>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommandations -->
+    {% if velocity_prediction.recommendations|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i>
+                        Recommandations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for recommendation in velocity_prediction.recommendations %}
+                    <div class="alert alert-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }} mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ recommendation.message }}</strong>
+                            </div>
+                            <span class="badge bg-{{ recommendation.priority == 'high' ? 'danger' : recommendation.priority == 'medium' ? 'warning' : 'info' }}">
+                                {{ recommendation.priority|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Message d'erreur -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h4 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Données Insuffisantes
+                </h4>
+                <p>Il n'y a pas assez de données historiques pour générer des prédictions fiables.</p>
+                <p>Assurez-vous d'avoir au moins 3 sprints avec des données de vélocité.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Actions Disponibles</h6>
+                            <small class="text-muted">Utilisez ces boutons pour obtenir des prédictions spécifiques</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="refreshPredictions()">
+                                <i class="fas fa-sync-alt"></i> Actualiser
+                            </button>
+                            <a href="{{ path('app_prediction_dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshPredictions() {
+    location.reload();
+}
+
+// Auto-refresh toutes les 5 minutes
+setInterval(function() {
+    // Optionnel: actualisation automatique
+}, 300000);
+</script>
+{% endblock %}

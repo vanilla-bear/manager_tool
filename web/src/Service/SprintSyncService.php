@@ -155,7 +155,7 @@ class SprintSyncService
         // ⚠️ Jira Cloud "enhanced search" (GET /rest/api/3/search/jql)
         // utilise nextPageToken. On tente d'abord cette route.
         $jql = sprintf(
-            'project = MD AND sprint = %d AND issuetype in (Bug, Epic, Story, Task, Technique) ORDER BY created ASC',
+            'project = MD AND sprint = %d AND type IN standardIssueTypes() ORDER BY cf[10200] ASC, created DESC',
             $sprintId
         );
     
@@ -256,7 +256,6 @@ class SprintSyncService
             $sprintStartDate = new \DateTime($sprintInfo['startDate']);
     
             $issues = $this->fetchSprintIssues($sprintId, false);
-            dump(count($issues));
             foreach ($issues as $issue) {
                 $fields = $issue['fields'] ?? [];
                 $storyPoints = $this->getStoryPoints($issue);
@@ -269,8 +268,22 @@ class SprintSyncService
                 }
     
                 $status = $fields['status']['statusCategory']['key'] ?? null;
+                $statusName = $fields['status']['name'] ?? '';
+                
                 if ($status === 'done') {
                     $completedPoints += $storyPoints;
+                }
+                
+                // Vérifier si le ticket est au statut "Devs terminés" ou à un statut plus avancé
+                $devTerminesStatuses = [
+                    'devs terminés', 'devs termines', 'dev terminé', 'dev termines',
+                    'test po', 'en attente', 'finalisé', 'finalise', 'finalize',
+                    'integration', 'intégration', 'ok pour mep', 'terminé', 'termine'
+                ];
+                
+                if (in_array(strtolower(trim($statusName)), $devTerminesStatuses)) {
+                    $devsTerminesPoints += $storyPoints;
+                    $devsTerminesCount++;
                 }
             }
     

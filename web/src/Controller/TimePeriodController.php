@@ -59,13 +59,23 @@ class TimePeriodController extends AbstractController {
       }
     }
 
-    // Récupérer les périodes de temps en fonction des critères de filtre
-    $timePeriods = $timePeriodRepository->findByCriteria($criteria);
+    // Récupérer la page courante (par défaut 1)
+    $page = (int) $request->query->get('page', 1);
+    $limit = 10;
+
+    // Récupérer les périodes de temps en fonction des critères de filtre avec pagination
+    $timePeriods = $timePeriodRepository->findByCriteria($criteria, $page, $limit);
+    $totalCount = $timePeriodRepository->countByCriteria($criteria);
+    $totalPages = ceil($totalCount / $limit);
 
     return $this->render('time_period/index.html.twig', [
       'form' => $form->createView(),
       'filterForm' => $filterForm->createView(),
       'timePeriods' => $timePeriods,
+      'currentPage' => $page,
+      'totalPages' => $totalPages,
+      'totalCount' => $totalCount,
+      'limit' => $limit,
     ]);
   }
 

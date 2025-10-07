@@ -5,15 +5,48 @@
 {% block body %}
         <h1 class="mb-4">Google Calendar Events</h1>
 
+        <!-- Messages flash -->
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+        
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+
         <!-- Boutons d'action -->
         <div class="mb-4">
-            <form action="{{ path('app_google_calendar_fetch') }}" method="post" class="d-inline">
-                <button type="submit" class="btn btn-primary">Fetch Events</button>
-            </form>
-            <form action="{{ path('app_google_calendar_delete_all') }}" method="post" class="d-inline">
-                <input type="hidden" name="_token" value="{{ csrf_token('delete_all_events') }}">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all events?');">Delete All Events</button>
-            </form>
+            <div class="btn-group" role="group">
+                <form action="{{ path('app_google_calendar_sync') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-sync-alt"></i> Synchroniser intelligemment
+                    </button>
+                </form>
+                <form action="{{ path('app_google_calendar_fetch') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Fetch Events (ajouter tous)
+                    </button>
+                </form>
+                <form action="{{ path('app_google_calendar_delete_all') }}" method="post" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_all_events') }}">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all events?');">
+                        <i class="fas fa-trash"></i> Supprimer tout
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mt-2">
+                <small class="text-muted">
+                    <strong>Synchroniser intelligemment</strong> : Met à jour les événements existants, ajoute les nouveaux et supprime ceux qui n'existent plus.<br>
+                    <strong>Fetch Events</strong> : Ajoute tous les événements sans vérifier les doublons (ancien comportement).
+                </small>
+            </div>
         </div>
 
         <!-- Formulaire de configuration des dates -->

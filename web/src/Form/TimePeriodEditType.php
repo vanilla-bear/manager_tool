@@ -45,22 +45,11 @@ class TimePeriodEditType extends AbstractType
       'scale' => 0, // Nombre de décimales, ajustez si nécessaire
       'disabled' => true
     ])
-      // Champ pour la vélocité finale
-      ->add('finalVelocity', NumberType::class, [
-        'label' => 'Vélocité finale',
-        'required' => false,
-        'scale' => 0, // Nombre de décimales, ajustez si nécessaire
-      ])
-      // Champ pour la vélocité finale
+      // Champ pour la vélocité communiquée
       ->add('communicatedVelocity', NumberType::class, [
         'label' => 'Vélocité communiqué',
         'required' => false,
         'scale' => 0, // Nombre de décimales, ajustez si nécessaire
-      ])
-      // Champ pour le nombre de points ajoutés dans le sprint
-      ->add('pointsAdded', IntegerType::class, [
-        'label' => 'Nombre de points ajoutés',
-        'required' => false,
       ]);
     $builder->get('endDate')->addModelTransformer($this->endDateTransformer);
 

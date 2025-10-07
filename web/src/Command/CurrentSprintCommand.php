@@ -139,6 +139,14 @@ class CurrentSprintCommand extends Command
                 $ticketStatusOverview
             );
 
+            // Types de tickets du sprint
+            $ticketTypesOverview = $this->getTicketTypesOverview($currentSprint);
+            $io->section('Types de Tickets du Sprint');
+            $io->table(
+                ['Type de Ticket', 'Nombre', 'Pourcentage'],
+                $ticketTypesOverview
+            );
+
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $io->error(sprintf('Erreur lors de la récupération des informations du sprint : %s', $e->getMessage()));
@@ -234,6 +242,54 @@ class CurrentSprintCommand extends Command
         } catch (\Exception $e) {
             error_log('Erreur récupération statuts pour sprint ' . $sprint->getName() . ': ' . $e->getMessage());
             return [['Erreur', 'Impossible de récupérer les données']];
+        }
+    }
+
+    /**
+     * Récupère les types de tickets du sprint avec répartition
+     */
+    private function getTicketTypesOverview($sprint): array
+    {
+        try {
+            $client = $this->createJiraClient();
+            
+            // Récupérer tous les tickets du sprint
+            $response = $client->request('GET', '/rest/agile/1.0/sprint/' . $sprint->getJiraId() . '/issue', [
+                'query' => [
+                    'maxResults' => 100,
+                    'fields' => 'issuetype'
+                ]
+            ]);
+
+            $data = $response->toArray();
+            
+            // Compter les tickets par type
+            $typeCounts = [];
+            $totalTickets = 0;
+            
+            foreach ($data['issues'] ?? [] as $issue) {
+                $issueType = $issue['fields']['issuetype']['name'] ?? 'Unknown';
+                $typeCounts[$issueType] = ($typeCounts[$issueType] ?? 0) + 1;
+                $totalTickets++;
+            }
+
+            // Créer l'overview avec pourcentages
+            $overview = [];
+            foreach ($typeCounts as $type => $count) {
+                $percentage = $totalTickets > 0 ? round(($count / $totalTickets) * 100, 1) : 0;
+                $overview[] = [$type, $count, $percentage . '%'];
+            }
+
+            // Trier par nombre décroissant
+            usort($overview, function($a, $b) {
+                return $b[1] - $a[1];
+            });
+
+            return $overview;
+
+        } catch (\Exception $e) {
+            error_log('Erreur récupération types de tickets pour sprint ' . $sprint->getName() . ': ' . $e->getMessage());
+            return [['Erreur', 'Impossible de récupérer les données', 'N/A']];
         }
     }
 

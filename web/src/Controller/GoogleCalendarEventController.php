@@ -62,6 +62,30 @@ class GoogleCalendarEventController extends AbstractController {
     return $this->redirectToRoute('app_google_calendar');
   }
 
+  #[Route('/google-calendar/sync', name: 'app_google_calendar_sync')]
+  public function syncEvents(GoogleCalendarService $googleCalendarService): Response
+  {
+    try {
+      // Appel à la fonction de synchronisation intelligente
+      $stats = $googleCalendarService->syncEvents();
+      
+      // Créer un message de succès avec les statistiques
+      $message = sprintf(
+        'Synchronisation terminée ! %d ajoutés, %d mis à jour, %d supprimés.',
+        $stats['added'],
+        $stats['updated'],
+        $stats['deleted']
+      );
+      
+      $this->addFlash('success', $message);
+    } catch (\Exception $e) {
+      $this->addFlash('error', 'Erreur lors de la synchronisation : ' . $e->getMessage());
+    }
+
+    // Redirige vers la page de la liste des événements après la synchronisation
+    return $this->redirectToRoute('app_google_calendar');
+  }
+
   #[Route('/google-calendar/delete-all', name: 'app_google_calendar_delete_all', methods: ['POST'])]
   public function deleteAllEvents(Request $request, GoogleCalendarEventRepository $repository, EntityManagerInterface $entityManager): Response
   {

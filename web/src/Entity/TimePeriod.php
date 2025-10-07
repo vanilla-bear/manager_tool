@@ -35,13 +35,6 @@ class TimePeriod {
   #[ORM\Column(type: 'float', nullable: true)]
   private ?float $communicatedVelocity = null;
 
-  // Nouveau champ pour la vélocité finale
-  #[ORM\Column(type: 'float', nullable: true)]
-  private ?float $finalVelocity = null;
-
-  // Nouveau champ pour le nombre de points ajoutés dans le sprint
-  #[ORM\Column(type: 'integer', nullable: true)]
-  private ?int $pointsAdded = null;
 
   #[ORM\Column(type: 'json', nullable: true)]
   private ?array $capacityData = null;
@@ -108,17 +101,6 @@ class TimePeriod {
     return $this;
   }
 
-  // Getter et Setter pour vélocité finale
-  public function getFinalVelocity(): ?float
-  {
-    return $this->finalVelocity;
-  }
-
-  public function setFinalVelocity(?float $finalVelocity): self
-  {
-    $this->finalVelocity = $finalVelocity;
-    return $this;
-  }
 
   // Getter et Setter pour vélocité communiqué
   public function getCommunicatedVelocity(): ?float
@@ -132,17 +114,6 @@ class TimePeriod {
     return $this;
   }
 
-  // Getter et Setter pour nombre de points ajoutés dans le sprint
-  public function getPointsAdded(): ?int
-  {
-    return $this->pointsAdded;
-  }
-
-  public function setPointsAdded(?int $pointsAdded): self
-  {
-    $this->pointsAdded = $pointsAdded;
-    return $this;
-  }
 
   // Getter et Setter pour capacityData
   public function getCapacityData(): ?array

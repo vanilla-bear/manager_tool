@@ -160,7 +160,7 @@ class SprintSyncService
         );
     
         $maxResults = 100; // autorisé par la v3
-        $fieldsCsv = 'key,status,customfield_10200,created,updated'; // CSV, pas tableau
+        $fieldsCsv = 'key,status,customfield_10200,created,updated,issuetype'; // CSV, pas tableau
     
         $nextPageToken = null;
         $pageSafeguard = 0; 
@@ -215,7 +215,7 @@ class SprintSyncService
                     'jql'        => $jql,
                     'startAt'    => $startAt,
                     'maxResults' => $maxResults,
-                    'fields'     => ['key', 'status', 'customfield_10200', 'created', 'updated'],
+                    'fields'     => ['key', 'status', 'customfield_10200', 'created', 'updated', 'issuetype'],
                 ],
             ]);
             $data = $response->toArray(false);
@@ -258,6 +258,13 @@ class SprintSyncService
             $issues = $this->fetchSprintIssues($sprintId, false);
             foreach ($issues as $issue) {
                 $fields = $issue['fields'] ?? [];
+                
+                // Exclure les sous-tâches des calculs
+                $issueType = $fields['issuetype']['name'] ?? '';
+                if (stripos($issueType, 'Sub-task') !== false || stripos($issueType, 'Sous-tâche') !== false || stripos($issueType, 'Sous-tache') !== false) {
+                    continue;
+                }
+                
                 $storyPoints = $this->getStoryPoints($issue);
     
                 $created = isset($fields['created']) ? new \DateTime($fields['created']) : null;

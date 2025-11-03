@@ -206,15 +206,22 @@ class CurrentSprintCommand extends Command
             $response = $client->request('GET', '/rest/agile/1.0/sprint/' . $sprint->getJiraId() . '/issue', [
                 'query' => [
                     'maxResults' => 100,
-                    'fields' => 'status'
+                    'fields' => 'status,issuetype'
                 ]
             ]);
 
             $data = $response->toArray();
             
-            // Compter les tickets par statut
+            // Compter les tickets par statut (en excluant les sous-tâches)
             $statusCounts = [];
             foreach ($data['issues'] ?? [] as $issue) {
+                $issueType = $issue['fields']['issuetype']['name'] ?? '';
+                
+                // Exclure les sous-tâches des calculs
+                if (stripos($issueType, 'Sub-task') !== false || stripos($issueType, 'Sous-tâche') !== false || stripos($issueType, 'Sous-tache') !== false) {
+                    continue;
+                }
+                
                 $status = $issue['fields']['status']['name'] ?? 'Unknown';
                 $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
             }
@@ -263,12 +270,18 @@ class CurrentSprintCommand extends Command
 
             $data = $response->toArray();
             
-            // Compter les tickets par type
+            // Compter les tickets par type (en excluant les sous-tâches)
             $typeCounts = [];
             $totalTickets = 0;
             
             foreach ($data['issues'] ?? [] as $issue) {
                 $issueType = $issue['fields']['issuetype']['name'] ?? 'Unknown';
+                
+                // Exclure les sous-tâches des calculs
+                if (stripos($issueType, 'Sub-task') !== false || stripos($issueType, 'Sous-tâche') !== false || stripos($issueType, 'Sous-tache') !== false) {
+                    continue;
+                }
+                
                 $typeCounts[$issueType] = ($typeCounts[$issueType] ?? 0) + 1;
                 $totalTickets++;
             }
